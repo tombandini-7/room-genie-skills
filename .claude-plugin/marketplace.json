@@ -1,0 +1,17 @@
+{
+  "name": "room-genie",
+  "owner": {
+    "name": "Room Genie",
+    "url": "https://roomgenie.travel"
+  },
+  "plugins": [
+    {
+      "name": "room-genie",
+      "source": ".",
+      "description": "Track Disney hotel and cruise pricing and alerts from Claude",
+      "version": "0.1.0",
+      "category": "travel",
+      "tags": ["disney", "hotels", "cruise", "alerts", "mcp"]
+    }
+  ]
+}
