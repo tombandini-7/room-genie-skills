@@ -1,45 +1,51 @@
 # room-genie-skills
 
-Claude plugin that connects [Room Genie](https://roomgenie.travel) to Claude Desktop, Claude Code, and other MCP-capable clients.
+Claude plugin that teaches Claude how to use the [Room Genie](https://roomgenie.travel) MCP server for Disney hotel and cruise pricing.
 
-Bundles:
+Bundles 5 skills:
 
-- The `room-genie` MCP server (hosted at `https://app.roomgenie.travel/api/mcp`) with 10 tools for creating/listing alerts and checking live Disney rates
-- 5 skills that teach Claude how to use those tools for:
-  - **room-genie-core** — alert CRUD workflows (all products)
-  - **disney-world-planner** — Walt Disney World resort + package quotes
-  - **disneyland-planner** — Disneyland Resort (California)
-  - **aulani-planner** — Aulani (Hawaii)
-  - **disney-cruise-planner** — Disney Cruise Line sailings + staterooms
+- **room-genie-core** — alert CRUD workflows (all products)
+- **disney-world-planner** — Walt Disney World resort + package quotes
+- **disneyland-planner** — Disneyland Resort (California)
+- **aulani-planner** — Aulani (Hawaii)
+- **disney-cruise-planner** — Disney Cruise Line sailings + staterooms
 
-## Install
+The MCP server itself lives at `https://app.roomgenie.travel/api/mcp` and is registered separately (see below) because Claude Code's plugin format only supports stdio MCP servers today — not remote HTTP.
 
-### Claude Code
+## Install (Claude Code)
+
+Two steps — register the server, then install the skills:
 
 ```bash
-# Add the marketplace
-/plugin marketplace add tombandini-7/room-genie-skills
+# 1. Register the hosted MCP server (one-time). Opens a browser for Supabase OAuth on first tool call.
+claude mcp add --transport streamable-http room-genie https://app.roomgenie.travel/api/mcp
 
-# Install the plugin
+# 2. Add the marketplace + install the skills plugin
+/plugin marketplace add tombandini-7/room-genie-skills
 /plugin install room-genie@room-genie
 ```
 
-### Claude Desktop
+Verify:
+```bash
+claude mcp list            # should show room-genie as connected
+/plugins                    # should show room-genie enabled with 5 skills
+```
 
-1. Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
-2. Add under `mcpServers`:
-   ```json
-   {
-     "mcpServers": {
-       "room-genie": {
-         "type": "streamable-http",
-         "url": "https://app.roomgenie.travel/api/mcp"
-       }
-     }
-   }
-   ```
-3. Restart Claude Desktop.
-4. The skills in this repo are Claude Code–specific — Claude Desktop gets the MCP tools but not the skill prompts. Roughly the same capability; Claude will reason from the tool descriptions.
+## Install (Claude Desktop)
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "room-genie": {
+      "type": "streamable-http",
+      "url": "https://app.roomgenie.travel/api/mcp"
+    }
+  }
+}
+```
+
+Restart Claude Desktop. The skills in this repo are Claude Code-specific — Claude Desktop gets the MCP tools directly and reasons from the tool descriptions, which covers most workflows.
 
 ## First use
 
