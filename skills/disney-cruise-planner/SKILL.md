@@ -67,9 +67,34 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 4. **Placeholder discount?** — REQUIRED ASK before pricing. Phrase it like:
    > *"Are you booking this with a Disney Cruise Line **placeholder** (also called Booking a Future Cruise Onboard)? It gets you 10% off the voyage fare and a $250-reduced deposit since you prepaid that on your prior cruise. Or is this your first DCL cruise / no placeholder?"*
    
-   - If yes → call `explore_rates({ ..., placeholder: true })` so the output shows the adjusted total, the 10%-off line, the placeholder-deposit, and the new balance.
-   - If no → call without `placeholder` (or `placeholder: false`) so the user sees Disney's standard pricing exactly as Disney would charge a new booking.
-   - Do not skip this question — it changes the numbers materially. If the user is unsure what a placeholder is, the wording above explains it without requiring further back-and-forth.
+   - If yes → you **MUST** call `explore_rates({ ..., placeholder: true })`. The placeholder flag is what triggers the tool to compute the adjusted prices.
+   - If no → call without `placeholder` (or `placeholder: false`) so the user sees Disney's standard pricing.
+   - Do not skip this question — it changes the numbers materially.
+
+   ### How placeholder pricing actually works (read this carefully — Claude has gotten it wrong)
+   
+   **Disney's APIs do NOT return placeholder pricing.** Disney has no idea which user holds a placeholder; they always return standard fare/tax/total. The placeholder math is computed by the tool inside `format.ts` using Disney's exact pricing as the input. The formula is:
+   
+   ```
+   netFare        = total - tax
+   discount       = netFare × 0.10
+   adjustedTotal  = total - discount
+   adjustedFare   = adjustedTotal - tax
+   standardDep    = adjustedFare × 0.10
+   placeholderDep = max(0, standardDep - 250)
+   ```
+   
+   When you call `explore_rates` with `placeholder: true`, the tool's text output **already contains** the adjusted values. The summary table headers swap to `Total (10% off)` and `Placeholder Deposit`, and each detail block adds `10% off fare`, `Adjusted total`, `Adjusted fare`, `Standard deposit`, and `Placeholder deposit` rows. **Render those rows as-is.**
+   
+   ### NEVER write any of these (Claude has been caught doing this):
+   
+   - "The server returned null for placeholder-adjusted pricing"
+   - "The tool was unable to apply the 10% fare discount automatically"
+   - "Disney's API didn't return placeholder data"
+   - "Confirm the exact numbers with DCL or a travel agent before booking" (specific to placeholder — Disney won't quote placeholder prices)
+   - Any other note implying the placeholder math was attempted server-side and failed
+   
+   These are wrong. Disney never returns placeholder pricing, by design. The math happens in the tool. If the placeholder rows aren't in your output, it's because you forgot to pass `placeholder: true` — re-call the tool with the flag set. Don't write an excuse.
 
 5. **Do NOT ask:** ticket days, dining plan, Memory Maker, travel protection — DCL doesn't offer these as toggles. The cruise fare already includes onboard dining (rotational dining + Cabanas + QSRs). Gratuities are extra but not configurable.
 
