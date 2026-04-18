@@ -64,13 +64,7 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 3. **Mode:**
    - `availability` — "is the category open, how many left" — free.
    - `package` — full pricing with tax. Requires Explorer.
-4. **10% Future Cruise Placeholder** — ASK BEFORE FETCHING:
-   > "Do you have a $250 Future Cruise Placeholder from a previous Disney cruise that you'll be applying to this booking? Or is this your first DCL cruise / you didn't book a placeholder onboard last time?"
-
-   - If user says **yes / I have one / using my placeholder** → pass `hasPlaceholder: true`. The output applies a 10% off-fare discount, recomputes the deposit as 10% of the discounted fare, credits the $250 already paid, and shows the additional deposit due (or notes if the placeholder fully covers it).
-   - If user says **no / first cruise / didn't book one** → omit `hasPlaceholder` (defaults to false). Standard pricing.
-   - The math comes from `lib/placeholder-pricing.ts:calculatePlaceholderPricing` — the same shared helper the web UI uses. Never compute the discount yourself.
-5. **Do NOT ask:** ticket days, dining plan, Memory Maker, travel protection — DCL doesn't offer these as toggles. The cruise fare already includes onboard dining (rotational dining + Cabanas + QSRs). Gratuities are extra but not configurable.
+4. **Do NOT ask:** ticket days, dining plan, Memory Maker, travel protection — DCL doesn't offer these as toggles. The cruise fare already includes onboard dining (rotational dining + Cabanas + QSRs). Gratuities (~$14.50/guest/night) are extra but not configurable.
 
 **If the user wants a price-drop alert:**
 - Ask for a specific category code (e.g. "O9C") by running `list_stateroom_categories` first — alerts track one category.
@@ -144,18 +138,17 @@ If the user asks specifically for the gratuity rate, cite the value from the too
 - **Never write `~$X,XXX` or `approximately $X,XXX` or `about $X,XXX`** when rendering a number from the tool. They are exact figures for this sailing + party + category combination
 - The only exception: if Disney genuinely returned null for a field and the tool noted the fallback, surface that as `fallback: not returned by Disney` — never invent a tilde
 
-**If the formatted text gets truncated or you fall back to structuredContent**, the structured payload includes `hasPlaceholder: boolean` and `party: { adults, children, childAges }`. When `hasPlaceholder === true`, you MUST run `calculatePlaceholderPricing(cat.price.total, cat.price.tax)` mentally for each category — Total/Deposit/Final-payment-due figures all change. Do NOT show the standard `cat.price.total` / `cat.deposit.depositAmount` directly when placeholder is on; that misleads the user. The math is: `subtotal = total - tax`, `discount = subtotal × 0.1`, `newTotal = total - discount`, `newDeposit = (newTotal - tax) × 0.1`, `additionalDepositDue = newDeposit - 250`.
-
-**Special note on gratuities.** DCL auto-applies gratuities to every booking at the rate returned by Disney's sailing-details API. The tool emits a "Gratuities $X at $Y/guest/night" line per category — render it as-is. Do NOT:
-- Add a "~" prefix to the gratuity amount
-- Re-introduce a separate "Out-the-door" or "With gratuities" combined total — it was removed because it added noise; users can mentally add gratuities to the Total if they want
+**Special note on gratuities.** DCL auto-applies gratuities to every booking at the rate returned by Disney's sailing-details API. Removing gratuities is an explicit opt-out the user has to make at checkout — it's not optional-by-default. So the tool emits a line labeled "Out-the-door (fare + tax + default gratuities): $X" — render it as-is. Do NOT:
+- Rename it to "With gratuities (~$X)"
+- Add a "~" prefix to the number
+- Replace "Out-the-door" with "With gratuities" or "Approximately"
 - Put gratuity amounts in parentheses as if they were optional
 
 Same rule for the "X rooms available · Y sq ft" line — no tildes on sq ft. Disney's stateroom-details API returns exact square footage.
 
 ### NEVER recompute Disney's deposit, tax, gratuity, or final payment amounts
 
-Those numbers come from Disney's own payment-calculator API via the tool and are already in the text output (and in `structuredContent.categories[].deposit` / `.price.tax` / the `gratuitiesRate` field). If you compute a percentage-of-total estimate, you WILL get a wrong answer (deposit is ~10% of fare, not of total; Disney also rounds per category; concierge gratuities are a different rate from standard). Pass through whatever the tool emitted. Full stop.
+Those numbers come from Disney's own payment-calculator API via the tool and are already in the text output (and in `structuredContent.categories[].deposit` / `.price.tax` / the `gratuitiesRate` field). Disney's deposit, gratuity, and final-payment formulas vary per sailing, per category, and per concierge tier — there is no single percentage you can apply. Pass through whatever the tool emitted. Full stop.
 
 Each detailed block from the tool contains — and ALL of this must reach the user:
 
@@ -195,7 +188,7 @@ If you absolutely must summarize (e.g. the user explicitly asks "just show me th
 **After a full cruise price quote:**
 - "Add ~$14.50/guest/night for gratuities — want me to calculate the actual out-the-door total?"
 - "Want to check a nearby sail date? Shifting by a week or swapping ships often saves meaningfully."
-- "Want a price-drop alert under ~$X?" (5–10% below total; DCL prices drop close to sail date)
+- "Want a price-drop alert at today's exact total ($X)? You can override the threshold if you want a cushion."
 
 **After the user seems stuck between two ships:**
 - "Wish vs Fantasy depends on itinerary — the Wish runs shorter Bahamian/Caribbean, Fantasy does 7-night Caribbean. Want me to compare a specific matching sail pair?"

@@ -138,7 +138,7 @@ Tailor follow-ups to the resort tier and package shape. Two to three, never more
 **After a full package total (with tickets + dining + MM + TP):**
 - "Remove the Dining Plan and re-quote — see if the savings outweigh the convenience."
 - "Try `travelProtection: false` — it's $99/adult. Worth removing if you already have travel insurance."
-- "Want to set a price-drop alert targeting ~$X?" (5–10% under current)
+- "Want to set a price-drop alert at today's exact price? You can override if you want a buffer."
 
 **After `list_room_types` returns many options:**
 - Pick 2–3 likely matches (e.g., "Standard View" vs "Theme Park View" vs "Club Level") and describe the price/experience tradeoff in one line each. Don't dump all 15 rooms.

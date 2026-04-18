@@ -118,7 +118,7 @@ Ask for dates + party first, then come back with the package questions.
 **After a full package quote with tickets:**
 - "Want to try without the Lightning Lane (`genie-plus`) add-on to see the baseline?"
 - "Add a day — sometimes the per-day ticket rate drops meaningfully on longer tickets."
-- "Set a price-drop alert under ~$X?" (5–10% below current)
+- "Set a price-drop alert at today's exact price? You can override if you want a buffer."
 
 **After `list_room_types` at a DLR hotel:**
 - Surface the Standard View vs Premium View (or themed rooms like Pirates of the Caribbean at Disneyland Hotel) and explain the tradeoff in one line each.
