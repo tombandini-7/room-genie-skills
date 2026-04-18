@@ -1,6 +1,6 @@
 ---
 name: room-genie-core
-description: Use this skill EVERY TIME you are about to call any `mcp__room-genie-dev__*` or `mcp__room-genie__*` tool (list_alerts, get_alert, create_alert, toggle_alert, delete_alert, list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, explore_rates). Covers the required ordering of tool calls, confirmation rules before mutations, the post-result presentation format (per-room blocks with total/deposit/balance/due dates, multi-room combined totals), and the "offer to set an alert" follow-up pattern. Applies across all four Room Genie products (WDW, DLR, Aulani, DCL). Also the right skill when the user mentions "Room Genie", "my alerts", "watch this price", "availability alert", or "price drop alert".
+description: Use this skill EVERY TIME you are about to call any `mcp__room-genie-dev__*` or `mcp__room-genie__*` tool (list_alerts, get_alert, create_alert, toggle_alert, delete_alert, list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, get_my_profile, explore_rates). Covers the required ordering of tool calls, confirmation rules before mutations, the post-result presentation format (per-room blocks with total/deposit/balance/due dates, multi-room combined totals), and the alert-offering flow (one alert per room, exact-price threshold suggestion, `get_my_profile` for notification defaults, availability alert for sold-out rooms). Applies across all four Room Genie products (WDW, DLR, Aulani, DCL). Also the right skill when the user mentions "Room Genie", "my alerts", "watch this price", "availability alert", or "price drop alert".
 ---
 
 # Room Genie — Core workflows
@@ -15,9 +15,10 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 | `list_room_types` | Get room UUIDs for a given resort — required before `create_alert` or `explore_rates` |
 | `list_cruise_sailings` | Search Disney Cruise Line sailings by month, ship, nights |
 | `list_stateroom_categories` | Get stateroom category codes for a specific sailing |
+| `get_my_profile` | Read the caller's notification settings (email, SMS-ready?) — use before `create_alert` to pick sensible `notificationMethod` default |
 | `list_alerts` | List the user's alerts (filterable by active/paused and hotel/cruise) |
 | `get_alert` | Fetch one alert with its most recent availability/pricing snapshot |
-| `create_alert` | Create a new availability or price-drop alert (hotel OR cruise) |
+| `create_alert` | Create a new availability or price-drop alert (hotel OR cruise). ONE per room — don't try to combine. |
 | `toggle_alert` | Pause or resume an alert |
 | `delete_alert` | Permanently delete an alert |
 | `explore_rates` | Query live rates: `mode: "availability" | "room-only" | "package"` |
@@ -123,19 +124,69 @@ First, present pricing clearly. ALWAYS include:
 - **Deposit due date** and **balance due date** when present (`paymentDates` in the structured result)
 - **Offer name + discount** when an offer applies
 
-If multiple rooms were returned for the same party: lay them out as comparable side-by-side blocks, cheapest first. If multiple parties (e.g. user asked "compare 2 adults vs 4 adults" and you called the tool twice), present BOTH blocks together and calculate the combined total if they said they'd book both.
+If multiple rooms were returned for the same party: lay them out as comparable side-by-side blocks, cheapest first. If multiple parties (e.g. user asked "compare 2 adults vs 4 adults" and you called the tool twice), present BOTH blocks together. A **Combined Total / Combined Deposit** summary is fine for *display*, but alerts are set per-room — see below.
 
-THEN — and this is the primary next step — **offer to set a price-drop alert using the returned data**, one or two sentences max:
+### Alert offer flow (RIGOROUS — follow exactly)
 
-> "Want me to set a price-drop alert so you're notified if this drops below $X? I'll use the same resort, room, dates, and party from this quote."
+Alerts in Room Genie are **one per room**, not combined. If you quoted two rooms, that's two separate `create_alert` calls if the user wants both watched.
 
-Pick `X` as 5–10% below the cheapest grand total (round to nearest $50 for hotels, nearest $100 for packages). If the user says yes, do NOT re-ask for resort / dates / party / ticket config — pull all of it from the `structuredContent` of the `explore_rates` result you just returned, and call `create_alert({ alert: { kind: "hotel", resortId, roomTypes: [<room id you priced>], checkIn, checkOut, adults, children, childAges, ticketDays, ticketType, diningPlan, memoryMaker, travelProtection, alertType: "price_drop", currentPrice: <their target>, notificationMethod: "email", clientNote: "" } })`. Confirm the alert was created, then offer two secondary follow-ups:
+**Step A — figure out the notification method.**
+Before proposing an alert, call `get_my_profile`. It returns `suggestedMethod`:
+- If the user has a verified phone AND SMS consent, `suggestedMethod` will be `"both"` — propose `both` as the default.
+- Otherwise `suggestedMethod` will be `"email"` — propose `email` only.
+- NEVER propose `sms` or `both` if the user hasn't set up SMS. Instead say: *"I can email you. If you'd like text alerts too, set up SMS in Settings first."*
 
+**Step B — propose the alert in a single concise offer.**
+For each **available** room you quoted, offer one alert. Example for a single-room quote:
+
+> "Want to watch this price? I'll set a price-drop alert at **$6,559.50** (today's exact price) — you'll be notified by **email** if it drops below that. Want to name it (optional) or keep the defaults?"
+
+Key rules:
+- **Suggest the EXACT grand total as the threshold**, not a discount. Let the user say "actually, make it $6,000" if they want a cushion.
+- **Offer the name as optional.** If they don't supply one, pass `name: null` (or omit). Don't force a name.
+- **Notification method comes from `get_my_profile`** — never guess.
+- **For multi-room quotes:** list each room's proposed alert separately:
+  > "If you want both watched, I can set:
+  >  1. **Resort View — 2 adults** price-drop alert at $6,559.50
+  >  2. **Resort View — 2 adults + child age 4** price-drop alert at $7,268.54
+  >  Both by email. Want both, or just one?"
+
+**Step C — on "yes", call `create_alert` per room.**
+Do NOT re-ask resort / dates / party / ticket config — pull it from the `structuredContent` of the `explore_rates` result. One call per room the user wants watched:
+
+```
+create_alert({
+  alert: {
+    kind: "hotel",
+    name: <user-provided name or null>,
+    resortId, roomTypes: [<single room id>],
+    checkIn, checkOut,
+    adults, children, childAges,
+    ticketDays, ticketType, diningPlan, memoryMaker, travelProtection,
+    alertType: "price_drop",
+    currentPrice: <grand total from this specific room's quote>,
+    notificationMethod: <suggestedMethod from get_my_profile, or user's override>,
+    clientNote: ""
+  }
+})
+```
+
+For cruise (`sailingId` present): use `kind: "cruise"` and pull `stateroomCategory`, `stateroomType`, `shipName`, `sailingName` from the category the user showed interest in.
+
+### Sold-out rooms → offer an availability alert instead
+
+For any room that came back `available: false` in the `explore_rates` result, you DON'T have a price to watch — a price-drop alert doesn't apply. Instead offer an **availability alert**:
+
+> "The Theme Park View room is currently sold out for those dates. Want me to set an **availability alert** so you're notified the moment it opens up?"
+
+On yes, call `create_alert` with `alertType: "availability"` and `currentPrice: null`. Everything else pulled from the quote's structured result.
+
+### Secondary follow-ups (after alert offer)
+
+Offer one or two of these, not all:
 - "Compare to a different resort for the same dates?"
 - "Try shifting the dates by a week to see if midweek saves money?"
 - If `mode: "package"`: "Try without Memory Maker or the dining plan to see the savings?"
-
-For cruise (`sailingId` present): use `kind: "cruise"` and pull `stateroomCategory`, `stateroomType`, `shipName`, `sailingName` from the category the user showed interest in.
 
 **After `list_resorts` or `list_room_types`:**
 - "Which one do you want me to check for your dates?"
