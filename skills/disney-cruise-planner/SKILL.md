@@ -103,6 +103,28 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 - **Special offers** (Kids Sail Free, military rates, Florida resident) show up in `list_cruise_sailings` response when applicable. Surface them when present.
 - **Gratuities are not included** — typically $14.50 per guest per night. Don't promise "all-inclusive."
 
+## Rendering `list_stateroom_categories` / `explore_rates` (cruise) output
+
+**Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table. The tool output is already grouped by Inside / Oceanview / Verandah / Concierge and each category block includes exactly what the user needs to see. Compressing to a 3- or 4-column table drops real information.
+
+Each category block from the tool contains — and ALL of this must reach the user:
+
+- **Category code** (e.g. `11C`)
+- **Display name** (e.g. "Standard Inside Stateroom")
+- **Total price** (tax-inclusive)
+- **Fare + Tax split** — both lines matter, show them
+- **With gratuities** line — the true out-the-door number (fare + tax + gratuities)
+- **Deposit amount + due date**
+- **Final payment due date**
+- **Rooms available** count
+- **Square footage** when present
+- **Sleeps** range (e.g. "Sleeps 3–4")
+- **View type** (e.g. "No exterior view", "Large porthole window", "Private Verandah")
+- **Decks** the category is found on (e.g. "Decks 6, 7, 8")
+- **Positioning** (e.g. "Midship", "Forward, Aft")
+
+If you absolutely must summarize (e.g. the user explicitly asks "just show me the cheapest per group"), confirm the trim with a sentence first — *"I'll collapse the full category list into just the cheapest per group. Want the full list instead?"* Default behavior is full rendering.
+
 ## Suggest next steps after retrieving DCL data
 
 **After `list_cruise_sailings` returns multiple sailings:**
