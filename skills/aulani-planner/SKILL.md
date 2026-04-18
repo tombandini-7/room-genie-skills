@@ -36,12 +36,20 @@ If a user asks for "a package with tickets and dining" at Aulani, correct them: 
 
 ## Required follow-up questions for Aulani (ask before calling `explore_rates`)
 
-Aulani has only ONE package-related toggle — don't ask about tickets, dining, or Memory Maker.
+Aulani has ONLY ONE paid add-on — don't ask about tickets, dining, or Memory Maker. Ask dates first.
 
-**Always ask:**
+### Ask dates first
+
 1. **Check-in and check-out dates** (YYYY-MM-DD).
 2. **Party** — adults, number of children, each child's age.
-3. **Room-only or with Travel Protection?** — Travel Protection is Aulani's only paid add-on ($99/adult, children free). Default no.
+
+### Then ask the one paid add-on
+
+3. **Travel Protection?** — ask as a **separate** yes/no question. $99/adult, children free. Aulani's only paid add-on in the package flow. Default no, but worth offering for longer or costlier stays.
+
+### If dates are missing
+
+Ask for dates + party first. Travel Protection is a short afterthought once dates land.
 
 **Do NOT ask:**
 - "Package or room-only?" — Aulani has no package option. Always use `mode: "availability"` or `mode: "room-only"`.

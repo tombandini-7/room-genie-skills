@@ -48,22 +48,49 @@ Don't push a plan unless the user asks. When they do ask "is the dining plan wor
 
 Before you call `explore_rates` in `room-only` or `package` mode, confirm EVERY field below. Ask in a conversational bundle — one or two messages, not a form — but do NOT guess or default silently.
 
-**Always ask:**
+### Ask dates FIRST (they gate later options)
+
+The year of the check-in date determines which dining plans Disney sells, so dates come first:
+
 1. **Check-in and check-out dates** (YYYY-MM-DD).
 2. **Party** — adults, number of children, and each child's age.
-3. **Package or room-only?** If the user already said one, skip.
+3. **Package or room-only?** If the user already said one, skip. Also skip if their phrasing makes it obvious ("full package", "with tickets", "just the room").
 
-**If `package`, also ask:**
+### If `package`, ask the rest — in this specific shape:
+
 4. **Number of park days** (integer 2–10). WDW tickets start at 2 days.
-5. **Ticket type** — offer the choice with a one-line description:
-   - Standard (`no-option`) — one park per day
-   - Park Hopper (`park-hopper`) — hop between parks same day
-   - Park Hopper + Water Parks (`plus`)
-   - Lightning Lane (`genie-plus`) — includes LL passes
-   - Park Hopper + Lightning Lane (`park-hopper-genie-plus`)
-6. **Dining plan** — offer: None, Quick Service (`quick_service`), Standard (`standard` — classic 1 table-service/night), Deluxe (`deluxe`). Default to None if the user shrugs.
-7. **Memory Maker?** ($185 flat) — yes/no. Default no.
-8. **Travel Protection?** ($99/adult, children free) — yes/no. Default no, but offer for trips >$3k.
+
+5. **Ticket type** — present ONLY these four labels to the user, not the raw enum values:
+   - **1 Park Per Day** (maps to `no-option`)
+   - **Park Hopper** (maps to `park-hopper`)
+   - **Waterpark & Sports** (maps to `water-parks-sport`)
+   - **Park Hopper Plus** (maps to `plus`)
+
+   Don't surface `genie-plus` / `park-hopper-genie-plus` as options in conversation — they exist in the API but aren't part of the standard consumer-facing pick list.
+
+6. **Dining plan** — the offered set depends on the **check-in year**:
+
+   - **2026 (check-in in 2026)** — offer:
+     - None (maps to `none`)
+     - Quick Service (maps to `quick_service`)
+     - Disney Dining Plan (maps to `standard`)
+   - **2027 and later** — offer:
+     - None (maps to `none`)
+     - Quick Service (maps to `quick_service`)
+     - Table Service (maps to `standard`)
+     - Deluxe Table Service (maps to `deluxe`)
+
+   NEVER offer Deluxe for a 2026 check-in — Disney doesn't sell it that year. If the user requests Deluxe for a 2026 trip, tell them it only becomes available for 2027+ arrivals and fall back to Disney Dining Plan.
+
+7. **Memory Maker?** — ask as a **separate** yes/no question. $185 flat, unlimited PhotoPass photos. Default no.
+
+8. **Travel Protection?** — ask as a **separate** yes/no question. $99 per adult, children free. Default no, but mention for trips over ~$3k total.
+
+Do NOT bundle Memory Maker and Travel Protection into the same question — they're distinct products with different pricing, and users decide on them separately.
+
+### If dates are missing, do NOT ask packaging questions yet
+
+If the user asks for pricing without giving check-in dates, get dates (and party) first. Saying "I'll need dates and party first to know which dining plans are offered that year" is fine. Once dates land, come back with the year-appropriate questionnaire.
 
 Once you have all the answers, walk through the full-package workflow below.
 

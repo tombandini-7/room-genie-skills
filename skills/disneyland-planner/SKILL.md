@@ -48,24 +48,37 @@ Same as WDW — $99/adult, children free. Offer it for longer stays.
 
 ## Required follow-up questions for DLR (ask before calling `explore_rates`)
 
-Ask all of these before calling. DLR has fewer knobs than WDW so this is a shorter list.
+DLR has fewer knobs than WDW. Ask dates FIRST, then package specifics.
 
-**Always ask:**
+### Ask dates first
+
 1. **Check-in and check-out dates** (YYYY-MM-DD).
 2. **Party** — adults, number of children, each child's age.
-3. **Package or room-only?** If unclear.
+3. **Package or room-only?** If unclear from the user's phrasing.
 
-**If `package`, also ask:**
-4. **Number of park days** (integer 1–5 — DLR maxes at 5, unlike WDW). 3 is the most common DLR length.
-5. **Ticket type** — DLR has a narrower set than WDW:
-   - Standard (`no-option`) — one park per day
-   - Park Hopper (`park-hopper`) — most DLR guests choose this because the parks are adjacent
-   - Lightning Lane (`genie-plus`)
-   - Park Hopper + Lightning Lane (`park-hopper-genie-plus`)
-   - **Do NOT offer** `plus` or `water-parks-sport` — those are WDW-only.
-6. **Dining plan:** DO NOT ask. DLR has no dining plan — always pass `diningPlan: "none"`. If the user asks for one, explain that DLR doesn't offer one.
-7. **Memory Maker?** — yes/no. Default no.
-8. **Travel Protection?** ($99/adult, children free) — yes/no.
+### If `package`, ask the rest — in this shape:
+
+4. **Number of park days** (integer 1–5). DLR maxes at 5, UNLIKE WDW. 3 is the most common DLR length.
+
+5. **Ticket type** — present ONLY these four labels to the user:
+   - **1 Park Per Day** (maps to `no-option`)
+   - **Park Hopper** (maps to `park-hopper`) — most DLR guests pick this since the parks are next to each other
+   - **Lightning Lane** (maps to `genie-plus`) — adds Lightning Lane passes
+   - **Park Hopper + Lightning Lane** (maps to `park-hopper-genie-plus`)
+
+   Do NOT offer `plus` (Park Hopper Plus) or `water-parks-sport` — those are WDW-only.
+
+6. **Dining plan:** DO NOT ASK. DLR has no dining plan — always pass `diningPlan: "none"` silently. If the user asks for one, explain DLR doesn't offer one.
+
+7. **Memory Maker?** — ask as a **separate** yes/no question. Default no.
+
+8. **Travel Protection?** — ask as a **separate** yes/no question. $99/adult, children free. Default no.
+
+Do NOT bundle Memory Maker + Travel Protection into the same question — they're separate products.
+
+### If dates are missing
+
+Ask for dates + party first, then come back with the package questions.
 
 ## Workflow (same pattern as WDW, narrower inputs)
 
