@@ -105,9 +105,11 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 
 ## Rendering `list_stateroom_categories` / `explore_rates` (cruise) output
 
-**Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table of your own. The tool already emits a hybrid layout per group: a compact **summary table** (Cat / Name / Total / Rooms) for quick scanning, followed by a **detailed block per category** for the full breakdown. Keep BOTH — the table is for scanning, the blocks are for deciding.
+**Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table of your own. The tool already emits a hybrid layout per group: a compact **summary table** (Cat / Name / Total / Tax / Deposit / Gratuities / Rooms) for quick scanning, followed by a **detailed block per category** for the full breakdown. Keep BOTH — the table is for scanning, the blocks are for deciding.
 
 If you merge or drop either half, the user loses either the scan affordance or the details.
+
+**NEVER recompute Disney's deposit, tax, or final payment amounts.** Those numbers come from Disney's own payment-calculator API via the tool and are already in the text output (and in `structuredContent.categories[].deposit` / `.price.tax`). If you compute a percentage-of-total estimate, you WILL get a wrong answer (deposit is ~10% of fare, not of total; Disney also rounds per category). Pass through whatever the tool emitted.
 
 Each detailed block from the tool contains — and ALL of this must reach the user:
 
