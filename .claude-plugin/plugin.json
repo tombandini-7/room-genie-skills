@@ -1,6 +1,6 @@
 {
   "name": "room-genie",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Track Disney hotel and cruise pricing and create/manage alerts from Claude. Connects to the Room Genie MCP server for live availability and package quotes.",
   "author": {
     "name": "Room Genie",

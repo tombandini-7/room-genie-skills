@@ -7,9 +7,9 @@
   "plugins": [
     {
       "name": "room-genie",
-      "source": ".",
+      "source": "./",
       "description": "Track Disney hotel and cruise pricing and alerts from Claude",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "travel",
       "tags": ["disney", "hotels", "cruise", "alerts", "mcp"]
     }
