@@ -49,6 +49,15 @@ DCL questionnaire is different from hotels. Before searching, confirm:
 - All ships + one month → ~120 seconds (close to the MCP tool-call limit)
 - Multiple months without ship filter → often times out; split into per-month calls if needed
 
+**When the user asks for a specific target date (e.g. "closest to April 8"):**
+The tool returns every matching sailing for the month filters, which can be 30–50 rows for a popular ship. Don't dump all of them. Instead:
+
+1. Pick the tightest relevant month filter — one month is almost always enough; add the previous or next month only if the target date is within a week of the month boundary.
+2. After the call returns, sort results by `|departureDate - targetDate|` in JavaScript (mentally) and show only the **3–5 closest** sailings — nearest match first, then nearest alternatives on either side.
+3. Say something like: *"Closest sailings to April 8, 2027: [list]. Want the full month of options, or pick one of these to price?"*
+
+This also dodges the overfetch problem where Render returns 51 sailings for a full month but the user only cares about 2–3 of them.
+
 **For pricing a specific sailing (`explore_rates` with `sailingId`):**
 1. **Sailing ID** — from the search result.
 2. **Stateroom preference** — Inside (cheapest), Oceanview, Verandah, or Concierge (pricey, limited). Ask which category fits their budget.
