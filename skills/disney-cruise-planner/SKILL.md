@@ -85,6 +85,11 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
    
    When you ask the question, say *"I'll wait on that before pulling pricing — meanwhile I'm finding the sailing"* (if running list_cruise_sailings in parallel) or just *"Let me know and I'll pull the pricing."* (if you already have the sailingId). Never say *"While you answer that, I'll fetch the pricing"* — that's the wrong call.
 
+   ### Deposit-due timing differs by mode
+
+   - **Without placeholder:** Disney's standard window applies — deposit is typically due in a few days (Disney returns the exact date in the API). The tool shows the date Disney returned.
+   - **With placeholder:** the placeholder deposit is due **immediately** on the day the booking is converted from the placeholder. There's no multi-day grace period — DCL requires payment same-day. The tool now labels the placeholder deposit row "due immediately"; surface that to the user when they ask about timing.
+
    ### How placeholder pricing actually works (read this carefully — Claude has gotten it wrong)
    
    **Disney's APIs do NOT return placeholder pricing.** Disney has no idea which user holds a placeholder; they always return standard fare/tax/total. The placeholder math is computed by the tool inside `format.ts` using Disney's exact pricing as the input. The formula is:
