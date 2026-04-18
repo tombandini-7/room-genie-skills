@@ -107,18 +107,18 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 
 **Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table of your own. The tool already emits a hybrid layout per group: a compact **summary table** and a **detailed block per category**. Keep BOTH. Keep EVERY column. Keep EVERY row.
 
-### The summary table has EXACTLY 7 columns. ALL 7 MUST APPEAR.
+### The summary table is emitted inside a fenced code block. Paste it through EXACTLY as-is.
 
-```
-| Cat | Name | Total | Tax | Deposit | Gratuities | Rooms |
-```
+The tool emits a fixed-width 7-column table wrapped in triple-backtick fences (a markdown code block). Standard markdown behavior: code blocks are rendered verbatim, not restructured.
 
-- Do NOT drop Tax, Deposit, or Gratuities — those are what the user asked for
-- Do NOT rename Total to "Total (w/ tax)" or anything else — keep the literal header
-- Do NOT re-draw the table as an ASCII box — the markdown table format the tool emits is what the user sees
+The table has 7 columns — **Cat, Name, Total, Tax, Deposit, Gratuities, Rooms** — with Disney's actual numbers for this sailing + party combination.
+
+- Do NOT strip the code fences and redraw the table as an ASCII box of your own
+- Do NOT drop Tax, Deposit, or Gratuities columns
+- Do NOT rename the Total header to "Total (w/ tax)" or anything else
 - Do NOT combine or merge columns
 
-If you find yourself thinking "this table would be cleaner with fewer columns" — STOP. The user explicitly asked for all 7. Claude has already been caught compressing to 4–5 columns and dropping Tax and Gratuities; don't do it again.
+Claude has been caught compressing this table to 4–5 columns. The fenced code block exists because skill directives alone weren't enough. Keep the fence, keep every column, keep every row.
 
 ### Every price in the output is EXACT. NEVER prefix with `~`.
 
@@ -126,6 +126,14 @@ If you find yourself thinking "this table would be cleaner with fewer columns" �
 - `gratuitiesRate` and `conciergeGratuitiesRate` in the tool's structured content are Disney's actual per-sailing rates, not rounded averages
 - **Never write `~$X,XXX` or `approximately $X,XXX` or `about $X,XXX`** when rendering a number from the tool. They are exact figures for this sailing + party + category combination
 - The only exception: if Disney genuinely returned null for a field and the tool noted the fallback, surface that as `fallback: not returned by Disney` — never invent a tilde
+
+**Special note on gratuities.** DCL auto-applies gratuities to every booking at the rate returned by Disney's sailing-details API. Removing gratuities is an explicit opt-out the user has to make at checkout — it's not optional-by-default. So the tool emits a line labeled "Out-the-door (fare + tax + default gratuities): $X" — render it as-is. Do NOT:
+- Rename it to "With gratuities (~$X)"
+- Add a "~" prefix to the number
+- Replace "Out-the-door" with "With gratuities" or "Approximately"
+- Put gratuity amounts in parentheses as if they were optional
+
+Same rule for the "X rooms available · Y sq ft" line — no tildes on sq ft. Disney's stateroom-details API returns exact square footage.
 
 ### NEVER recompute Disney's deposit, tax, gratuity, or final payment amounts
 
