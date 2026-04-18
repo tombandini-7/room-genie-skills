@@ -88,7 +88,16 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
    ### Deposit-due timing differs by mode
 
    - **Without placeholder:** Disney's standard window applies — deposit is typically due in a few days (Disney returns the exact date in the API). The tool shows the date Disney returned.
-   - **With placeholder:** the placeholder deposit is due **immediately** on the day the booking is converted from the placeholder. There's no multi-day grace period — DCL requires payment same-day. The tool now labels the placeholder deposit row "due immediately"; surface that to the user when they ask about timing.
+   - **With placeholder:** the placeholder deposit is due **immediately** on the day the booking is converted from the placeholder. There's no multi-day grace period — DCL requires payment same-day. The tool labels the placeholder deposit row "due immediately"; surface that.
+
+   ### Final payment date is REQUIRED in your output, both modes
+
+   The tool emits a callout line above the per-group blocks like:
+   > 📅 **Final payment due Jan 5, 2027** for all priced categories on this sailing.
+
+   **You MUST keep that callout in your response verbatim** — it's the single most important piece of payment-timing info for the user. The same date also appears inside each detail block on the "Final payment" row. If you've been editing the detail block (which you shouldn't), at minimum keep the standalone 📅 callout.
+
+   Do not drop, edit, or paraphrase the 📅 line. Do not move it into a footer or trailing note. Do not summarize it as "due before sailing" — the user wants the exact date. This was being dropped as recently as v0.20; if you find yourself trimming the response, this line is the LAST thing to cut.
 
    ### How placeholder pricing actually works (read this carefully — Claude has gotten it wrong)
    
