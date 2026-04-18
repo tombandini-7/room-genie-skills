@@ -40,8 +40,14 @@ DCL questionnaire is different from hotels. Before searching, confirm:
 **For sailing search (`list_cruise_sailings`):**
 1. **Month(s)** — `YYYY-MM` format, at least one. Ask "what month(s) are you flexible on?".
 2. **Party** — adults, number of children, each child's age (ages matter for pricing; under-3s are discounted).
-3. *(Optional but helpful)* **Ship preference** — Wish, Fantasy, Treasure, Destiny, Dream, Magic, Wonder, Adventure. Offer the list.
+3. **Ship preference** — STRONGLY RECOMMEND picking at least one. Full-month-all-ships searches take 2+ minutes; narrowing to a ship or two brings it to 20–40 seconds. Present the list: Wish (WW), Fantasy (DF), Treasure (DT), Destiny (WD), Dream (DD), Magic (DM), Wonder (DW), Adventure (DA). If the user says "any ship", warn them the search will take 1–2 minutes and proceed.
 4. *(Optional)* **Nights** — 3, 4, 5, 7+.
+
+**Search performance note:** `list_cruise_sailings` scrapes DCL live. Scope directly drives latency:
+- One specific ship + one month → ~20 seconds
+- Two or three ships + one month → ~40–60 seconds
+- All ships + one month → ~120 seconds (close to the MCP tool-call limit)
+- Multiple months without ship filter → often times out; split into per-month calls if needed
 
 **For pricing a specific sailing (`explore_rates` with `sailingId`):**
 1. **Sailing ID** — from the search result.
