@@ -9,7 +9,7 @@
       "name": "room-genie",
       "source": "./",
       "description": "Skills that teach Claude how to use the Room Genie MCP server for Disney hotel + cruise pricing and alerts",
-      "version": "0.17.0",
+      "version": "0.18.0",
       "category": "travel",
       "tags": ["disney", "hotels", "cruise", "alerts", "mcp"]
     }
