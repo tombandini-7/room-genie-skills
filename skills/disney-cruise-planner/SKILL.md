@@ -105,11 +105,31 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 
 ## Rendering `list_stateroom_categories` / `explore_rates` (cruise) output
 
-**Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table of your own. The tool already emits a hybrid layout per group: a compact **summary table** (Cat / Name / Total / Tax / Deposit / Gratuities / Rooms) for quick scanning, followed by a **detailed block per category** for the full breakdown. Keep BOTH — the table is for scanning, the blocks are for deciding.
+**Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table of your own. The tool already emits a hybrid layout per group: a compact **summary table** and a **detailed block per category**. Keep BOTH. Keep EVERY column. Keep EVERY row.
 
-If you merge or drop either half, the user loses either the scan affordance or the details.
+### The summary table has EXACTLY 7 columns. ALL 7 MUST APPEAR.
 
-**NEVER recompute Disney's deposit, tax, or final payment amounts.** Those numbers come from Disney's own payment-calculator API via the tool and are already in the text output (and in `structuredContent.categories[].deposit` / `.price.tax`). If you compute a percentage-of-total estimate, you WILL get a wrong answer (deposit is ~10% of fare, not of total; Disney also rounds per category). Pass through whatever the tool emitted.
+```
+| Cat | Name | Total | Tax | Deposit | Gratuities | Rooms |
+```
+
+- Do NOT drop Tax, Deposit, or Gratuities — those are what the user asked for
+- Do NOT rename Total to "Total (w/ tax)" or anything else — keep the literal header
+- Do NOT re-draw the table as an ASCII box — the markdown table format the tool emits is what the user sees
+- Do NOT combine or merge columns
+
+If you find yourself thinking "this table would be cleaner with fewer columns" — STOP. The user explicitly asked for all 7. Claude has already been caught compressing to 4–5 columns and dropping Tax and Gratuities; don't do it again.
+
+### Every price in the output is EXACT. NEVER prefix with `~`.
+
+- Totals, fares, taxes, deposits, final payments, gratuities — all come from Disney's APIs (availability + payment-calculator + sailing-details enrichment)
+- `gratuitiesRate` and `conciergeGratuitiesRate` in the tool's structured content are Disney's actual per-sailing rates, not rounded averages
+- **Never write `~$X,XXX` or `approximately $X,XXX` or `about $X,XXX`** when rendering a number from the tool. They are exact figures for this sailing + party + category combination
+- The only exception: if Disney genuinely returned null for a field and the tool noted the fallback, surface that as `fallback: not returned by Disney` — never invent a tilde
+
+### NEVER recompute Disney's deposit, tax, gratuity, or final payment amounts
+
+Those numbers come from Disney's own payment-calculator API via the tool and are already in the text output (and in `structuredContent.categories[].deposit` / `.price.tax` / the `gratuitiesRate` field). If you compute a percentage-of-total estimate, you WILL get a wrong answer (deposit is ~10% of fare, not of total; Disney also rounds per category; concierge gratuities are a different rate from standard). Pass through whatever the tool emitted. Full stop.
 
 Each detailed block from the tool contains — and ALL of this must reach the user:
 
