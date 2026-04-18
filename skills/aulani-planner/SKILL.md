@@ -1,6 +1,6 @@
 ---
 name: aulani-planner
-description: Aulani, a Disney Resort & Spa in Ko Olina, Hawaii — checking availability, quoting rates, and setting alerts. Use when the user mentions Aulani, Ko Olina, Oahu Disney resort, Hawaii Disney, or asks about a Disney trip to Hawaii. Aulani is a DVC (Disney Vacation Club) property that also sells cash stays.
+description: Use this skill BEFORE calling `explore_rates` or `create_alert` for Aulani, A Disney Resort & Spa in Ko Olina, Hawaii (Oahu), or any conversation about a Disney Hawaii trip. Aulani has NO theme park tickets, NO dining plan, NO Memory Maker — its questionnaire is RADICALLY shorter than WDW/DLR (just dates + party + Travel Protection yes/no). Always use `mode: "availability"` or `mode: "room-only"`, never `mode: "package"`. Contains the Aulani-specific questionnaire, view category tradeoffs (Island View / Partial Ocean / Ocean View), and hotel-room vs villa math. Prevents Claude from asking about tickets or dining plans that Aulani doesn't sell.
 ---
 
 # Aulani — trip planner

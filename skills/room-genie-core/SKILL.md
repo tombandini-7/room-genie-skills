@@ -1,6 +1,6 @@
 ---
 name: room-genie-core
-description: Core Room Genie workflows for creating, listing, toggling, and deleting alerts across Walt Disney World, Disneyland Resort, Aulani, and Disney Cruise Line. Use whenever the user asks about "my Room Genie alerts", wants to create a new alert to watch pricing, check current rates, or manage existing alerts. Trigger on phrases like "watch this price", "create an alert", "my alerts", "any new availability", "Disney trip", "Disney vacation", "Disney cruise", "Disney hotel", "Room Genie".
+description: Use this skill EVERY TIME you are about to call any `mcp__room-genie-dev__*` or `mcp__room-genie__*` tool (list_alerts, get_alert, create_alert, toggle_alert, delete_alert, list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, explore_rates). Covers the required ordering of tool calls, confirmation rules before mutations, the post-result presentation format (per-room blocks with total/deposit/balance/due dates, multi-room combined totals), and the "offer to set an alert" follow-up pattern. Applies across all four Room Genie products (WDW, DLR, Aulani, DCL). Also the right skill when the user mentions "Room Genie", "my alerts", "watch this price", "availability alert", or "price drop alert".
 ---
 
 # Room Genie — Core workflows

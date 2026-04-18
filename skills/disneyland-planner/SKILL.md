@@ -1,6 +1,6 @@
 ---
 name: disneyland-planner
-description: Disneyland Resort (California) trip planning — picking a hotel, quoting packages, and setting alerts. Use when the user mentions Disneyland Resort, DLR, Disneyland, California Adventure, DCA, Downtown Disney, Anaheim, or the specific DLR hotels — Disneyland Hotel, Grand Californian, Pixar Place Hotel (formerly Paradise Pier). Use when the user is clearly talking about the California parks, NOT Walt Disney World in Florida.
+description: Use this skill BEFORE calling `explore_rates` or `create_alert` for Disneyland Resort in California — any of the three on-property hotels (Disneyland Hotel, Grand Californian Hotel & Spa, Pixar Place Hotel / Paradise Pier, Villas at the Grand Californian) or any conversation about Disneyland Park, California Adventure, DCA, Downtown Disney, Anaheim. Contains the DLR follow-up questionnaire (ticketDays 1-5 NOT 2-10, narrower ticket set — no water-parks-sport or plus, NEVER ask about a dining plan since DLR doesn't have one, Memory Maker, Travel Protection), and cross-hotel comparison patterns. Do NOT use for Walt Disney World in Florida — use disney-world-planner for that instead.
 ---
 
 # Disneyland Resort — trip planner

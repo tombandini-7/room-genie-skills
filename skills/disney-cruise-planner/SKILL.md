@@ -1,6 +1,6 @@
 ---
 name: disney-cruise-planner
-description: Disney Cruise Line (DCL) trip planning — searching sailings, choosing a stateroom category, checking availability, and setting cruise alerts. Use when the user mentions Disney Cruise Line, DCL, a Disney cruise, the Disney Wish, Disney Fantasy, Disney Treasure, Disney Dream, Disney Magic, Disney Wonder, Disney Destiny, Disney Adventure, or itineraries (Bahamian, Caribbean, Alaskan, Mediterranean, Transatlantic, Castaway Cay, Lookout Cay). Use when the user wants to compare cruise dates or alert on price drops for a sailing.
+description: Use this skill BEFORE calling `list_cruise_sailings`, `list_stateroom_categories`, `explore_rates` (with sailingId), or `create_alert` (kind:"cruise") for any Disney Cruise Line trip — Disney Wish, Disney Fantasy, Disney Treasure, Disney Dream, Disney Magic, Disney Wonder, Disney Destiny, Disney Adventure — or any DCL itinerary (Bahamian, Caribbean, Alaskan, Mediterranean, Transatlantic, Castaway Cay, Lookout Cay, Port Canaveral). Cruise flow is STRUCTURALLY DIFFERENT from hotels: no ticket days, no dining plan toggle, no Memory Maker — the cruise fare already bundles those. Contains the DCL questionnaire (months array for search, party, optional ship/nights; then sailingId + category + mode for pricing), stateroom category structure (Inside/Oceanview/Verandah/Concierge), ship codes (WW=Wish, WD=Destiny, DF=Fantasy, DA=Adventure, DD=Dream, DT=Treasure, DM=Magic, DW=Wonder), and kid-pricing nuances.
 ---
 
 # Disney Cruise Line — trip planner
