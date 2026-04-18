@@ -105,6 +105,40 @@ When the user says "quote me a full package at [resort]":
 5. Render the resulting table. Highlight: nightly rate, package grand total, deposit ($200 + travel protection), balance due, deposit due date, balance due date.
 6. Offer to `create_alert` with `price_drop` if the user wants to be notified when the package drops below that price.
 
+## Rendering hotel package output — STRICT rules
+
+### Never round dollar amounts
+
+Disney quotes WDW packages to the cent: e.g. **$8,033.69**, not $8,034. The tool emits the exact `\$X,XXX.XX` value with two decimals — render it as-is. Do NOT:
+
+- Truncate to whole dollars ($8,034)
+- Round to nearest 10 ($8,030)
+- Drop trailing zeros ($8,033.7)
+- Replace cents with "≈" or "~"
+
+If you find yourself thinking "the cents are noise," they're not — users compare quotes against Disney's checkout page, which always shows the cent. A $0.69 mismatch makes the user distrust the entire quote.
+
+### Render the full add-on breakdown matrix
+
+When the tool returns `addOnOptions` (always present for `mode: "package"`), it emits a `### Package add-ons (full breakdown)` section that includes:
+
+1. **Tickets — type swap matrix** at the selected day count (e.g. "Switch ticket type (still 4 days):" → table of 1 Park Per Day / Park Hopper / Waterpark & Sports / Park Hopper Plus, each with admission total + delta vs current)
+2. **Tickets — day count matrix** at the selected type (e.g. "Switch number of days (keeping 1 Park Per Day):" → table of 2-day / 3-day / ... / 10-day with admission total)
+3. **Dining plan options** (e.g. None / Quick Service / Standard / Deluxe) with each plan cost + delta vs current
+4. **Memory Maker** — included or not + add cost
+5. **Travel Protection** — included or not + add cost ($99/adult, children free)
+
+Render this section verbatim. The user wants to see the *deltas* — that's the whole point of asking for a breakdown. Don't:
+
+- Drop columns (each table has Plan/Type/Days, Cost, Δ vs current — keep all three)
+- Drop rows (if 9 day-counts come back, render 9 rows; do NOT compress to "3 cheapest")
+- Build your own matrix (e.g. dining plans × ticket types) — the tool emits two separate matrices because Disney prices them independently. A combined matrix multiplies what you actually need to display
+- Skip the Memory Maker / Travel Protection lines if the user said no — they still want to see the add cost in case they change their mind
+
+### What the user's matrix view in their note shows
+
+The user's screenshot showed a dining plan × ticket type matrix. That's not what Disney prices — Disney quotes each combo independently, and the deltas in addOnOptions are vs the currently selected combo. So a single quote produces ONE pair of matrices (type-swap + day-swap), not a 4×4 grid. If the user wants to see all 16 combos, they need to call `explore_rates` 16 times (or you compute them by adding the deltas — but be transparent that you're computing rather than re-quoting).
+
 ## WDW-specific gotchas
 
 - **Animal Kingdom Lodge** is really two sub-resorts (Jambo House and Kidani Village) plus the villa side. `list_resorts` may return each separately — ask the user which one.
