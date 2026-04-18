@@ -144,6 +144,8 @@ If the user asks specifically for the gratuity rate, cite the value from the too
 - **Never write `~$X,XXX` or `approximately $X,XXX` or `about $X,XXX`** when rendering a number from the tool. They are exact figures for this sailing + party + category combination
 - The only exception: if Disney genuinely returned null for a field and the tool noted the fallback, surface that as `fallback: not returned by Disney` — never invent a tilde
 
+**If the formatted text gets truncated or you fall back to structuredContent**, the structured payload includes `hasPlaceholder: boolean` and `party: { adults, children, childAges }`. When `hasPlaceholder === true`, you MUST run `calculatePlaceholderPricing(cat.price.total, cat.price.tax)` mentally for each category — Total/Deposit/Final-payment-due figures all change. Do NOT show the standard `cat.price.total` / `cat.deposit.depositAmount` directly when placeholder is on; that misleads the user. The math is: `subtotal = total - tax`, `discount = subtotal × 0.1`, `newTotal = total - discount`, `newDeposit = (newTotal - tax) × 0.1`, `additionalDepositDue = newDeposit - 250`.
+
 **Special note on gratuities.** DCL auto-applies gratuities to every booking at the rate returned by Disney's sailing-details API. Removing gratuities is an explicit opt-out the user has to make at checkout — it's not optional-by-default. So the tool emits a line labeled "Out-the-door (fare + tax + default gratuities): $X" — render it as-is. Do NOT:
 - Rename it to "With gratuities (~$X)"
 - Add a "~" prefix to the number
