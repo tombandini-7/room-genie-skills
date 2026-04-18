@@ -64,7 +64,14 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 3. **Mode:**
    - `availability` — "is the category open, how many left" — free.
    - `package` — full pricing with tax. Requires Explorer.
-4. **Do NOT ask:** ticket days, dining plan, Memory Maker, travel protection — DCL doesn't offer these as toggles. The cruise fare already includes onboard dining (rotational dining + Cabanas + QSRs). Gratuities (~$14.50/guest/night) are extra but not configurable.
+4. **Placeholder discount?** — REQUIRED ASK before pricing. Phrase it like:
+   > *"Are you booking this with a Disney Cruise Line **placeholder** (also called Booking a Future Cruise Onboard)? It gets you 10% off the voyage fare and a $250-reduced deposit since you prepaid that on your prior cruise. Or is this your first DCL cruise / no placeholder?"*
+   
+   - If yes → call `explore_rates({ ..., placeholder: true })` so the output shows the adjusted total, the 10%-off line, the placeholder-deposit, and the new balance.
+   - If no → call without `placeholder` (or `placeholder: false`) so the user sees Disney's standard pricing exactly as Disney would charge a new booking.
+   - Do not skip this question — it changes the numbers materially. If the user is unsure what a placeholder is, the wording above explains it without requiring further back-and-forth.
+
+5. **Do NOT ask:** ticket days, dining plan, Memory Maker, travel protection — DCL doesn't offer these as toggles. The cruise fare already includes onboard dining (rotational dining + Cabanas + QSRs). Gratuities are extra but not configurable.
 
 **If the user wants a price-drop alert:**
 - Ask for a specific category code (e.g. "O9C") by running `list_stateroom_categories` first — alerts track one category.
