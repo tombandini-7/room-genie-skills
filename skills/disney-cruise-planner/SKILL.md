@@ -107,18 +107,31 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 
 **Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table of your own. The tool already emits a hybrid layout per group: a compact **summary table** and a **detailed block per category**. Keep BOTH. Keep EVERY column. Keep EVERY row.
 
-### The summary table is emitted inside a fenced code block. Paste it through EXACTLY as-is.
+### Both the summary table AND the per-category detail blocks are emitted inside fenced code blocks. Paste them through EXACTLY as-is.
 
-The tool emits a fixed-width 7-column table wrapped in triple-backtick fences (a markdown code block). Standard markdown behavior: code blocks are rendered verbatim, not restructured.
+The tool emits two distinct surfaces per group:
 
-The table has 7 columns — **Cat, Name, Total, Tax, Deposit, Gratuities, Rooms** — with Disney's actual numbers for this sailing + party combination.
+1. A fixed-width 7-column summary table wrapped in a fenced code block (```\```). Columns: **Cat, Name, Total, Tax, Deposit, Gratuities, Rooms**.
+2. One fenced code block per category immediately below, with key: value rows showing Total, Fare, Tax, Gratuities, Out-the-door, Deposit, Final payment, Availability, Size, Sleeps, View, Decks, Location.
 
-- Do NOT strip the code fences and redraw the table as an ASCII box of your own
-- Do NOT drop Tax, Deposit, or Gratuities columns
-- Do NOT rename the Total header to "Total (w/ tax)" or anything else
-- Do NOT combine or merge columns
+Markdown renders fenced code blocks verbatim — that's why they're fenced. DO NOT:
 
-Claude has been caught compressing this table to 4–5 columns. The fenced code block exists because skill directives alone weren't enough. Keep the fence, keep every column, keep every row.
+- Strip the code fences
+- Redraw anything as an ASCII box, a flat bullet list, or a one-line `·`-separated description
+- Drop any column from the summary table
+- Rename the Total header to "Total (w/ tax)"
+- Collapse the per-category detail blocks into single lines
+
+Claude has been caught compressing the table to 4–5 columns AND flattening the per-category blocks into single `·`-separated rows. Both caused the user to lose deposit dates, final payment dates, view info, deck/location, sleeps, and sq ft. The fenced code blocks exist because skill instructions alone weren't enough. Render them exactly as the tool emits them.
+
+### No Claude-synthesized preamble or postscript about gratuities
+
+Do NOT write intro text like "Gratuities auto-apply at Disney's default rate: $80/guest standard, $136.25/guest concierge (sailing total, ~$16/night and ~$27.25/night)" before the table. The per-category Gratuities column and the detail block's Gratuities row already carry that information with the EXACT rate for the sailing. Inventing a summary preamble introduces:
+
+- Rounding/tildes that contradict the exact numbers below
+- Rate figures that Claude estimates rather than reads
+
+If the user asks specifically for the gratuity rate, cite the value from the tool's structuredContent (`gratuitiesRate` or `conciergeGratuitiesRate`) — never a computed average.
 
 ### Every price in the output is EXACT. NEVER prefix with `~`.
 
