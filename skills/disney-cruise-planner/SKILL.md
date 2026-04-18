@@ -70,6 +70,20 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
    - If yes → you **MUST** call `explore_rates({ ..., placeholder: true })`. The placeholder flag is what triggers the tool to compute the adjusted prices.
    - If no → call without `placeholder` (or `placeholder: false`) so the user sees Disney's standard pricing.
    - Do not skip this question — it changes the numbers materially.
+   
+   ### Wait for the answer before calling `explore_rates`. Don't speculatively fetch.
+   
+   Claude's instinct is to be helpful by saying *"while you answer, I'll start fetching"* and immediately calling `explore_rates`. **Don't.** The placeholder flag is part of the tool input — calling without it means the prices are wrong, and you'll have to recall the tool (each call is 30–120s). That's a worse experience than waiting 5 seconds for the user's reply.
+   
+   What IS safe to do in parallel with the placeholder question:
+   - `list_cruise_sailings` (only if you don't already have the sailingId) — it doesn't take a `placeholder` param.
+   - `get_my_profile` — for notification setup later.
+   
+   What is NOT safe to do until the user answers:
+   - `explore_rates({ sailingId, ... })` — placeholder is part of the input.
+   - Any pricing-presentation work (no point until you have prices).
+   
+   When you ask the question, say *"I'll wait on that before pulling pricing — meanwhile I'm finding the sailing"* (if running list_cruise_sailings in parallel) or just *"Let me know and I'll pull the pricing."* (if you already have the sailingId). Never say *"While you answer that, I'll fetch the pricing"* — that's the wrong call.
 
    ### How placeholder pricing actually works (read this carefully — Claude has gotten it wrong)
    
