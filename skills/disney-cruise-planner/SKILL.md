@@ -107,22 +107,20 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 
 **Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table of your own. The tool already emits a hybrid layout per group: a compact **summary table** and a **detailed block per category**. Keep BOTH. Keep EVERY column. Keep EVERY row.
 
-### Both the summary table AND the per-category detail blocks are emitted inside fenced code blocks. Paste them through EXACTLY as-is.
+### The output has two surfaces per group — render both EXACTLY as-is.
 
-The tool emits two distinct surfaces per group:
+1. A **proper 7-column markdown pipe table** (using `|` separators, not a fenced code block). Columns: **Cat, Name, Total, Tax, Deposit, Gratuities, Rooms**. Markdown renderers display this as an actual bordered table — that's intentional; the user specifically wants a real table, not fenced plain text.
+2. An **H3 heading** (`### <Cat> — <Name>`) followed by a **fenced code block** for each category with aligned key: value rows. Fields: Total, Fare, Tax, Gratuities, Out-the-door, Deposit, Final payment, Availability, Size, Sleeps, View, Decks, Location.
 
-1. A fixed-width 7-column summary table wrapped in a fenced code block (```\```). Columns: **Cat, Name, Total, Tax, Deposit, Gratuities, Rooms**.
-2. One fenced code block per category immediately below, with key: value rows showing Total, Fare, Tax, Gratuities, Out-the-door, Deposit, Final payment, Availability, Size, Sleeps, View, Decks, Location.
+DO NOT:
 
-Markdown renders fenced code blocks verbatim — that's why they're fenced. DO NOT:
+- Modify the markdown pipe table (don't drop columns, don't rename headers, don't collapse to ASCII, don't remove column separators)
+- Strip the H3 heading or the code fences around the detail block
+- Flatten the key: value fenced block into single `·`-separated lines
+- Write your own intro summary of gratuities before the table
+- Add `~` to any price
 
-- Strip the code fences
-- Redraw anything as an ASCII box, a flat bullet list, or a one-line `·`-separated description
-- Drop any column from the summary table
-- Rename the Total header to "Total (w/ tax)"
-- Collapse the per-category detail blocks into single lines
-
-Claude has been caught compressing the table to 4–5 columns AND flattening the per-category blocks into single `·`-separated rows. Both caused the user to lose deposit dates, final payment dates, view info, deck/location, sleeps, and sq ft. The fenced code blocks exist because skill instructions alone weren't enough. Render them exactly as the tool emits them.
+Claude has been caught (a) compressing the table to 4–5 columns, (b) flattening the detail blocks into single lines, and (c) converting the H3 heading to plain text prefixed with "Category:". Every previous attempt to fix via skill-only directives failed; the table + fenced-detail structure is now enforced in the format code. Pass it through exactly.
 
 ### No Claude-synthesized preamble or postscript about gratuities
 
