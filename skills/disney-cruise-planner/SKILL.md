@@ -64,7 +64,13 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 3. **Mode:**
    - `availability` — "is the category open, how many left" — free.
    - `package` — full pricing with tax. Requires Explorer.
-4. **Do NOT ask:** ticket days, dining plan, Memory Maker, travel protection — DCL doesn't offer these as toggles. The cruise fare already includes onboard dining (rotational dining + Cabanas + QSRs). Gratuities (~$14.50/guest/night) are extra but not configurable.
+4. **10% Future Cruise Placeholder** — ASK BEFORE FETCHING:
+   > "Do you have a $250 Future Cruise Placeholder from a previous Disney cruise that you'll be applying to this booking? Or is this your first DCL cruise / you didn't book a placeholder onboard last time?"
+
+   - If user says **yes / I have one / using my placeholder** → pass `hasPlaceholder: true`. The output applies a 10% off-fare discount, recomputes the deposit as 10% of the discounted fare, credits the $250 already paid, and shows the additional deposit due (or notes if the placeholder fully covers it).
+   - If user says **no / first cruise / didn't book one** → omit `hasPlaceholder` (defaults to false). Standard pricing.
+   - The math comes from `lib/placeholder-pricing.ts:calculatePlaceholderPricing` — the same shared helper the web UI uses. Never compute the discount yourself.
+5. **Do NOT ask:** ticket days, dining plan, Memory Maker, travel protection — DCL doesn't offer these as toggles. The cruise fare already includes onboard dining (rotational dining + Cabanas + QSRs). Gratuities are extra but not configurable.
 
 **If the user wants a price-drop alert:**
 - Ask for a specific category code (e.g. "O9C") by running `list_stateroom_categories` first — alerts track one category.
