@@ -105,9 +105,11 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
 
 ## Rendering `list_stateroom_categories` / `explore_rates` (cruise) output
 
-**Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table. The tool output is already grouped by Inside / Oceanview / Verandah / Concierge and each category block includes exactly what the user needs to see. Compressing to a 3- or 4-column table drops real information.
+**Render the tool's `content[0].text` verbatim.** Do NOT re-format it into a tighter summary table of your own. The tool already emits a hybrid layout per group: a compact **summary table** (Cat / Name / Total / Rooms) for quick scanning, followed by a **detailed block per category** for the full breakdown. Keep BOTH — the table is for scanning, the blocks are for deciding.
 
-Each category block from the tool contains — and ALL of this must reach the user:
+If you merge or drop either half, the user loses either the scan affordance or the details.
+
+Each detailed block from the tool contains — and ALL of this must reach the user:
 
 - **Category code** (e.g. `11C`)
 - **Display name** (e.g. "Standard Inside Stateroom")
