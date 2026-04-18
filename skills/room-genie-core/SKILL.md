@@ -36,7 +36,11 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
 5. **Party fields matter for pricing.** Always collect adults + children + each child's age before calling `explore_rates` in room-only or package mode.
 
-6. **Package mode fields.** If the user wants a full package quote (`mode: "package"`), you need: `ticketDays` (1–10), `ticketType`, `diningPlan`, `memoryMaker` (bool), `travelProtection` (bool). Don't invent values — ask.
+6. **Ask about pricing shape before calling.** If the user hasn't explicitly said "package" or "room only", ask: *"Want a full package quote (tickets + dining + add-ons) or just room pricing?"* THEN use the product-specific skill (disney-world-planner / disneyland-planner / aulani-planner / disney-cruise-planner) to collect the right follow-ups for that product — the required fields and valid ranges differ per product.
+
+7. **Never invent package fields.** If `mode: "package"`, you need: `ticketDays`, `ticketType`, `diningPlan`, `memoryMaker` (bool), `travelProtection` (bool). Valid ranges and defaults differ per product — ask.
+
+8. **Multi-room requests in a single turn.** If the user asks for multiple rooms with different parties in the same message (e.g. "price a room for 2 adults and another for 2 adults + 1 child at the same resort"), call `explore_rates` once per party. Then present **one combined section**: per-room blocks with party/category/total/deposit/balance, plus a clearly labeled **Combined Package Total** line that sums the grand totals and a **Combined Deposit** line that sums the deposits. Same resort, same dates, just each room as its own card inside one response.
 
 ## Standard workflows
 

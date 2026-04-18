@@ -46,13 +46,34 @@ Same as WDW — $99/adult, children free. Offer it for longer stays.
 - Stays are shorter than WDW — 2–4 nights is typical, often as part of a California trip.
 - Peak season: spring break, mid-summer, Halloween Time (Sep–Oct), Holidays (mid-Nov to early Jan).
 
+## Required follow-up questions for DLR (ask before calling `explore_rates`)
+
+Ask all of these before calling. DLR has fewer knobs than WDW so this is a shorter list.
+
+**Always ask:**
+1. **Check-in and check-out dates** (YYYY-MM-DD).
+2. **Party** — adults, number of children, each child's age.
+3. **Package or room-only?** If unclear.
+
+**If `package`, also ask:**
+4. **Number of park days** (integer 1–5 — DLR maxes at 5, unlike WDW). 3 is the most common DLR length.
+5. **Ticket type** — DLR has a narrower set than WDW:
+   - Standard (`no-option`) — one park per day
+   - Park Hopper (`park-hopper`) — most DLR guests choose this because the parks are adjacent
+   - Lightning Lane (`genie-plus`)
+   - Park Hopper + Lightning Lane (`park-hopper-genie-plus`)
+   - **Do NOT offer** `plus` or `water-parks-sport` — those are WDW-only.
+6. **Dining plan:** DO NOT ask. DLR has no dining plan — always pass `diningPlan: "none"`. If the user asks for one, explain that DLR doesn't offer one.
+7. **Memory Maker?** — yes/no. Default no.
+8. **Travel Protection?** ($99/adult, children free) — yes/no.
+
 ## Workflow (same pattern as WDW, narrower inputs)
 
 1. `list_resorts({ query: "Disneyland" })` — returns the 3 DLR hotels (plus Pixar Place if listed under its new name).
 2. `list_room_types({ resortId })` — room categories vary (standard view, premium view, concierge, suites, themed rooms).
-3. Collect dates + party + ticketDays (3 is common) + ticketType.
+3. Collect DLR follow-up answers above.
 4. `explore_rates({ mode: "package", ... diningPlan: "none" })`.
-5. Render result. Offer price-drop alert if interesting.
+5. Render result with deposit + balance + due dates. Offer price-drop alert if interesting.
 
 ## DLR-specific gotchas
 

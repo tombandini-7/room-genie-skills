@@ -34,13 +34,30 @@ If a user asks for "a package with tickets and dining" at Aulani, correct them: 
 - `mode: "room-only"` — full per-room pricing. Works on Aulani, uses the Aulani-specific backend automatically. Requires Explorer subscription.
 - `mode: "package"` — NOT applicable in the WDW sense. Treat any package-style request as `room-only` plus optional travel protection.
 
+## Required follow-up questions for Aulani (ask before calling `explore_rates`)
+
+Aulani has only ONE package-related toggle — don't ask about tickets, dining, or Memory Maker.
+
+**Always ask:**
+1. **Check-in and check-out dates** (YYYY-MM-DD).
+2. **Party** — adults, number of children, each child's age.
+3. **Room-only or with Travel Protection?** — Travel Protection is Aulani's only paid add-on ($99/adult, children free). Default no.
+
+**Do NOT ask:**
+- "Package or room-only?" — Aulani has no package option. Always use `mode: "availability"` or `mode: "room-only"`.
+- Park days / ticket type — Aulani has no tickets.
+- Dining plan — Aulani has no dining plan.
+- Memory Maker — Aulani has no Memory Maker add-on.
+
+If the user tries to specify any of those, gently correct them: *"Aulani doesn't bundle tickets/dining/Memory Maker — those are only offered for Walt Disney World and Disneyland Resort trips."*
+
 ## Workflow
 
 1. `list_resorts({ query: "Aulani" })` → get Aulani's resortId (there's only one).
 2. `list_room_types({ resortId })` → show category + view options.
-3. Collect: dates, adults, children + ages, travelProtection?
+3. Collect Aulani follow-up answers above.
 4. `explore_rates({ mode: "availability" | "room-only", resortId, roomTypes: [...], checkIn, checkOut, adults, children, childAges, travelProtection })`.
-5. Render the table. Aulani rates are often in the $400–1200/night range depending on view and season.
+5. Render the table with deposit + balance when present. Aulani rates are often in the $400–1200/night range depending on view and season.
 
 ## Aulani-specific gotchas
 

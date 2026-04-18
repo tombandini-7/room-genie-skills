@@ -33,6 +33,27 @@ Pass the 2-letter code as `ships` filter on `list_cruise_sailings` when the user
 
 The exact category codes come from `list_stateroom_categories` — **never guess**; always call the tool to get the current list for a specific sailing.
 
+## Required follow-up questions for DCL (ask before calling `list_cruise_sailings` or `explore_rates`)
+
+DCL questionnaire is different from hotels. Before searching, confirm:
+
+**For sailing search (`list_cruise_sailings`):**
+1. **Month(s)** — `YYYY-MM` format, at least one. Ask "what month(s) are you flexible on?".
+2. **Party** — adults, number of children, each child's age (ages matter for pricing; under-3s are discounted).
+3. *(Optional but helpful)* **Ship preference** — Wish, Fantasy, Treasure, Destiny, Dream, Magic, Wonder, Adventure. Offer the list.
+4. *(Optional)* **Nights** — 3, 4, 5, 7+.
+
+**For pricing a specific sailing (`explore_rates` with `sailingId`):**
+1. **Sailing ID** — from the search result.
+2. **Stateroom preference** — Inside (cheapest), Oceanview, Verandah, or Concierge (pricey, limited). Ask which category fits their budget.
+3. **Mode:**
+   - `availability` — "is the category open, how many left" — free.
+   - `package` — full pricing with tax. Requires Explorer.
+4. **Do NOT ask:** ticket days, dining plan, Memory Maker, travel protection — DCL doesn't offer these as toggles. The cruise fare already includes onboard dining (rotational dining + Cabanas + QSRs). Gratuities (~$14.50/guest/night) are extra but not configurable.
+
+**If the user wants a price-drop alert:**
+- Ask for a specific category code (e.g. "O9C") by running `list_stateroom_categories` first — alerts track one category.
+
 ## Workflow — "what Disney cruises are available in Sep 2026?"
 
 1. `list_cruise_sailings({ months: ["2026-09"], adults: 2, children: 0, childAges: [] })`
