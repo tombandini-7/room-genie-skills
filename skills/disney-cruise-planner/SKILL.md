@@ -146,10 +146,9 @@ If the user asks specifically for the gratuity rate, cite the value from the too
 
 **If the formatted text gets truncated or you fall back to structuredContent**, the structured payload includes `hasPlaceholder: boolean` and `party: { adults, children, childAges }`. When `hasPlaceholder === true`, you MUST run `calculatePlaceholderPricing(cat.price.total, cat.price.tax)` mentally for each category — Total/Deposit/Final-payment-due figures all change. Do NOT show the standard `cat.price.total` / `cat.deposit.depositAmount` directly when placeholder is on; that misleads the user. The math is: `subtotal = total - tax`, `discount = subtotal × 0.1`, `newTotal = total - discount`, `newDeposit = (newTotal - tax) × 0.1`, `additionalDepositDue = newDeposit - 250`.
 
-**Special note on gratuities.** DCL auto-applies gratuities to every booking at the rate returned by Disney's sailing-details API. Removing gratuities is an explicit opt-out the user has to make at checkout — it's not optional-by-default. So the tool emits a line labeled "Out-the-door (fare + tax + default gratuities): $X" — render it as-is. Do NOT:
-- Rename it to "With gratuities (~$X)"
-- Add a "~" prefix to the number
-- Replace "Out-the-door" with "With gratuities" or "Approximately"
+**Special note on gratuities.** DCL auto-applies gratuities to every booking at the rate returned by Disney's sailing-details API. The tool emits a "Gratuities $X at $Y/guest/night" line per category — render it as-is. Do NOT:
+- Add a "~" prefix to the gratuity amount
+- Re-introduce a separate "Out-the-door" or "With gratuities" combined total — it was removed because it added noise; users can mentally add gratuities to the Total if they want
 - Put gratuity amounts in parentheses as if they were optional
 
 Same rule for the "X rooms available · Y sq ft" line — no tildes on sq ft. Disney's stateroom-details API returns exact square footage.
