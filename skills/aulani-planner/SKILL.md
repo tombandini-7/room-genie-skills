@@ -62,10 +62,11 @@ If the user tries to specify any of those, gently correct them: *"Aulani doesn't
 ## Workflow
 
 1. `list_resorts({ query: "Aulani" })` → get Aulani's resortId (there's only one).
-2. `list_room_types({ resortId })` → show category + view options.
-3. Collect Aulani follow-up answers above.
-4. `explore_rates({ mode: "availability" | "room-only", resortId, roomTypes: [...], checkIn, checkOut, adults, children, childAges, travelProtection })`.
-5. Render the table with deposit + balance when present. Aulani rates are often in the $400–1200/night range depending on view and season.
+2. **`list_room_types({ resortId })` — REQUIRED before pricing.** Aulani has about a dozen room types spanning Standard Hotel Rooms, Deluxe Studios, 1-Bedroom Villas, 2-Bedroom Villas, and 3-Bedroom Grand Villas — each with view categories (Island / Partial Ocean / Ocean). Show the list and ask which 1–3 the user wants priced. Don't price everything by default.
+3. User picks rooms → record the `roomTypes` UUID array.
+4. Collect Aulani follow-up answers above (dates, party, Travel Protection yes/no).
+5. `explore_rates({ mode: "availability" | "room-only", resortId, roomTypes: [<picked ids>], checkIn, checkOut, adults, children, childAges, travelProtection })`.
+6. Render the table with deposit + balance when present. Aulani rates are often in the $400–1200/night range depending on view and season.
 
 ## Aulani-specific gotchas
 

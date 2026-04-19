@@ -99,11 +99,20 @@ Once you have all the answers, walk through the full-package workflow below.
 When the user says "quote me a full package at [resort]":
 
 1. `list_resorts({ query })` → confirm resortId (disambiguate if multiple matches — Polynesian Resort vs Polynesian Villas).
-2. `list_room_types({ resortId })` → show the user the choices, ask which view/bedding they want (or track all).
-3. Collect the WDW follow-up answers above.
-4. `explore_rates({ mode: "package", ... })` — this can take 2–4 minutes; warn the user.
-5. Render the resulting table. Highlight: nightly rate, package grand total, deposit ($200 + travel protection), balance due, deposit due date, balance due date.
-6. Offer to `create_alert` with `price_drop` if the user wants to be notified when the package drops below that price.
+2. **`list_room_types({ resortId })` — REQUIRED before pricing.** Show the user the full list of rooms at that resort and ask which 1–4 they want priced. Never skip this step and never default to "price everything" without explicit user consent — each room is a separate 25–30s cart flow.
+3. User picks rooms → record the `roomTypes` UUID array.
+4. Collect the WDW follow-up answers above (dates, party, package vs room-only, ticket days / type, dining plan, Memory Maker, Travel Protection).
+5. `explore_rates({ mode: "package", resortId, roomTypes: [<picked ids>], ... })` — this takes 25–30 seconds per room. Warn the user about expected duration (e.g. "pricing 3 rooms will take about 90 seconds").
+6. Render the resulting table. Highlight: nightly rate, package grand total, deposit ($200 + travel protection), balance due, deposit due date, balance due date.
+7. Offer to `create_alert` with `price_drop` if the user wants to be notified when the package drops below that price.
+
+### How to present the room list (step 2)
+
+Use `list_room_types`'s output as-is. It returns id + name + category + view + bed type + max occupancy. Render as a short markdown list or table with the info, then ask something like:
+
+> "Which rooms would you like me to price? You can pick several (e.g. 'Standard View and Theme Park View'). Pricing takes about 25–30 seconds per room."
+
+Accept partial names like "Standard View" — match them to the UUIDs in the tool's output. If the user says "all of them", confirm first: "That's N rooms, about M minutes of pricing. Are you sure?"
 
 ## Rendering hotel package output — STRICT rules
 

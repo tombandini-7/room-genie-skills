@@ -135,9 +135,17 @@ This also dodges the overfetch problem where Render returns 51 sailings for a fu
    - Optional filters: `ships`, `nights`, `destinations`, `ports`
 2. Render the sailing list: sailing ID, ship, itinerary, dates, nights, availability.
 3. Ask: "Which sailing looks interesting?" → grab the sailingId.
-4. `list_stateroom_categories({ sailingId, adults, children, childAges })` → show category pricing + room counts.
-5. User picks a category → `category` field (e.g. `O9C`) + often a human-friendly `stateroomType` (e.g. `OUTSIDE-DELUXE`).
-6. Offer to alert or price.
+4. `explore_rates({ mode: "package", sailingId, ...party })` — **this prices ALL stateroom categories in a single cart flow** (Disney's `sailingavailability-vas` endpoint returns every category in one response, so unlike hotels there's no per-category perf penalty). Takes 20–40 seconds once warm.
+5. Render the full stateroom table + detail blocks for every category, grouped by type (Inside / Oceanview / Verandah / Concierge).
+6. User picks a specific category → use that code (e.g. `O9C`) + `stateroomType` for a price-drop alert via `create_alert`.
+
+### Why the cruise flow doesn't need a "pick before price" step like hotels
+
+For WDW/DLR/Aulani, each room is a separate Disney cart flow (25–30s each). Pricing 10 rooms = 5 minutes. So the skill forces picking first.
+
+For DCL, Disney's stateroom-availability API returns every category + price in one shot (~25s total for the whole sailing). So pricing all categories upfront is cheap and gives the user the full comparison view. Picking one category happens only when setting an alert.
+
+If the user specifically asks to narrow (e.g. "only show me Verandah categories"), apply the filter to the RENDERED output — don't re-call `explore_rates` with a subset; you already have all the data.
 
 ## Workflow — "alert me if the Wish 4-nighter in Sep drops below $3200"
 

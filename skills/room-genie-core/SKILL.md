@@ -49,6 +49,19 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
 8. **Multi-room requests in a single turn.** If the user asks for multiple rooms with different parties in the same message (e.g. "price a room for 2 adults and another for 2 adults + 1 child at the same resort"), call `explore_rates` once per party. Then present **one combined section**: per-room blocks with party/category/total/deposit/balance, plus a clearly labeled **Combined Package Total** line that sums the grand totals and a **Combined Deposit** line that sums the deposits. Same resort, same dates, just each room as its own card inside one response.
 
+9. **LIST BEFORE YOU PRICE (hotels only).** For WDW, DLR, and Aulani, never jump straight to `explore_rates` for a resort without first calling `list_room_types({ resortId })` and asking the user which specific rooms they want priced. Each room = a separate 25–30s cart flow, so pricing all rooms at a Deluxe resort is ~10 minutes of scraping that usually isn't what the user wants. The right flow is:
+
+   ```
+   list_resorts({ query })         → resortId
+   list_room_types({ resortId })   → show room list
+   "Which would you like me to price?" → user picks 1–4 rooms
+   explore_rates({ roomTypes: [only the picked ids] })
+   ```
+
+   Exception: if the user explicitly says "price everything at this resort" or "compare all rooms", pass an empty `roomTypes` array and warn them it'll take a few minutes. Default behavior is always "pick first".
+
+   For Disney Cruise Line this rule does NOT apply — see disney-cruise-planner for the cruise-specific flow (prices all categories in one scrape).
+
 ## Standard workflows
 
 ### "Create an alert for Poly Dec 1–5 for 2 adults, watch if it drops below $3000"

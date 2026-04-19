@@ -83,10 +83,11 @@ Ask for dates + party first, then come back with the package questions.
 ## Workflow (same pattern as WDW, narrower inputs)
 
 1. `list_resorts({ query: "Disneyland" })` — returns the 3 DLR hotels (plus Pixar Place if listed under its new name).
-2. `list_room_types({ resortId })` — room categories vary (standard view, premium view, concierge, suites, themed rooms).
-3. Collect DLR follow-up answers above.
-4. `explore_rates({ mode: "package", ... diningPlan: "none" })`.
-5. Render result with deposit + balance + due dates. Offer price-drop alert if interesting.
+2. **`list_room_types({ resortId })` — REQUIRED before pricing.** Show the user the room list and ask which they want priced. DLR hotels have fewer rooms than WDW (usually 4–8), but each is still a separate cart flow — don't default to all-rooms. Let the user pick 1–3.
+3. User picks rooms → record the `roomTypes` UUID array.
+4. Collect DLR follow-up answers above (dates, party, package vs room-only, ticket days / type, Memory Maker, Travel Protection — no dining plan).
+5. `explore_rates({ mode: "package", roomTypes: [<picked ids>], ... diningPlan: "none" })`.
+6. Render result with deposit + balance + due dates. Offer price-drop alert if interesting.
 
 ## DLR-specific gotchas
 
