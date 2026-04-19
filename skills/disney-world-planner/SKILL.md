@@ -145,9 +145,53 @@ Render this verbatim. Each line is one component the user selected — render ev
 
 The tool already filters: if the user said no Memory Maker, no MM line appears. If diningPlan is "none", no dining line. So if you don't see a line for something, it's because the user opted out — don't add it back, don't write a footnote saying "Memory Maker is also available for $185". Stay faithful to the breakdown the tool returned.
 
-### Don't fabricate alternatives
+### One `explore_rates` call already priced every alternative — don't re-call
 
-Earlier versions of the tool emitted a "switch ticket type / switch days" matrix. That matrix is now removed because the user's reference UI doesn't show alternatives — only the selected configuration. If the user wants to compare alternatives, the answer is to ask them which alternative they want to price and call `explore_rates` again with the new params. Do NOT manually compute alternative prices by adding deltas — Disney prices each combo independently and the math doesn't always line up.
+Disney's cart flow (the thing that takes 25–30 seconds per room) returns **every** ticket type, **every** day count, and **every** dining plan in the same response. The MCP tool passes all of it through in `structuredContent.addOnOptions`:
+
+```
+addOnOptions.tickets.typeOptions     ← admission total for 1 Park Per Day / Park Hopper / Waterpark & Sports / Park Hopper Plus, at the selected day count
+addOnOptions.tickets.dayOptions      ← admission total for 2-day / 3-day / 4-day / … / 10-day, at each ticket type
+addOnOptions.dining.planOptions      ← cost for No Plan / Quick Service / Standard / Deluxe
+addOnOptions.memoryMaker.price       ← flat $185 add-on
+addOnOptions.travelProtection.total  ← $99 × adults
+```
+
+When the user asks a follow-up like:
+- "What would Park Hopper add?"
+- "What if it's 5 days instead of 4?"
+- "How much is the Deluxe dining plan?"
+- "How much is Memory Maker?"
+
+**Read from `structuredContent.addOnOptions` in the last `explore_rates` result. Do NOT call `explore_rates` again.** Re-calling launches a fresh browser + 25–30s cart flow for data you already have. That's the single biggest perf regression Claude can cause in this app.
+
+Observed bug (v0.23 and earlier): Claude was calling `explore_rates` 5 times in parallel — once per ticket type — for the same room + dates. Each call ran a full cart flow. That's ~2.5 minutes of browser work to answer a question that was already answered by the first call.
+
+### When it IS okay to re-call
+
+Re-call `explore_rates` only when:
+- Dates change
+- Party size changes
+- Resort changes
+- User explicitly wants a fresh price (stale cache, over 2 minutes old)
+
+Never re-call just to swap ticket type, ticket days, dining plan, Memory Maker, or Travel Protection on the same booking. Those are all in `addOnOptions`.
+
+### Computing an alternative total from `addOnOptions`
+
+If the user asks "what's the total with Park Hopper?", here's the math:
+
+```
+newTicketCost  = addOnOptions.tickets.typeOptions.find(t => t.id === 'park-hopper').admissionTotal
+currentTicketCost = breakdown.ticketCost
+newGrandTotal  = room.grandTotal - currentTicketCost + newTicketCost
+```
+
+Same pattern for dining (use `planOptions.find(p => p.dineType === '...').diningCost`). Memory Maker delta = `±185`. Travel Protection delta = `±(99 × adults)`. These are straightforward arithmetic on API-sourced numbers — acceptable to compute. Just say "from the same quote, swapping to Park Hopper would change the total to $X" so the user knows it's derived, not a fresh scrape.
+
+### Don't fabricate alternatives not in addOnOptions
+
+If the user asks about something not in `addOnOptions` (e.g. a different resort, different dates, different party), THEN a fresh `explore_rates` is correct. But pricing for the same room + dates + party + different add-ons? Always derive from the first call.
 
 ## WDW-specific gotchas
 
