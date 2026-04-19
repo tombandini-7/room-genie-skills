@@ -118,26 +118,36 @@ Disney quotes WDW packages to the cent: e.g. **$8,033.69**, not $8,034. The tool
 
 If you find yourself thinking "the cents are noise," they're not — users compare quotes against Disney's checkout page, which always shows the cent. A $0.69 mismatch makes the user distrust the entire quote.
 
-### Render the full add-on breakdown matrix
+### Per-room itemized breakdown (mirrors the web UI)
 
-When the tool returns `addOnOptions` (always present for `mode: "package"`), it emits a `### Package add-ons (full breakdown)` section that includes:
+For each available room, the tool emits a fenced code block with the items the user opted into (room, tickets, dining, MM, TP) and a Grand Total. Example:
 
-1. **Tickets — type swap matrix** at the selected day count (e.g. "Switch ticket type (still 4 days):" → table of 1 Park Per Day / Park Hopper / Waterpark & Sports / Park Hopper Plus, each with admission total + delta vs current)
-2. **Tickets — day count matrix** at the selected type (e.g. "Switch number of days (keeping 1 Park Per Day):" → table of 2-day / 3-day / ... / 10-day with admission total)
-3. **Dining plan options** (e.g. None / Quick Service / Standard / Deluxe) with each plan cost + delta vs current
-4. **Memory Maker** — included or not + add cost
-5. **Travel Protection** — included or not + add cost ($99/adult, children free)
+```
+### Family Suites
+_Suites_
 
-Render this section verbatim. The user wants to see the *deltas* — that's the whole point of asking for a breakdown. Don't:
+```
+Room (6 nights)              $4,172.37
+4-Day 1 Park Per Day         $3,861.32
+Table-Service Dining Plan    $1,773.30
+─────────────────────────────────────
+Grand Total                  $9,806.99
+```
 
-- Drop columns (each table has Plan/Type/Days, Cost, Δ vs current — keep all three)
-- Drop rows (if 9 day-counts come back, render 9 rows; do NOT compress to "3 cheapest")
-- Build your own matrix (e.g. dining plans × ticket types) — the tool emits two separate matrices because Disney prices them independently. A combined matrix multiplies what you actually need to display
-- Skip the Memory Maker / Travel Protection lines if the user said no — they still want to see the add cost in case they change their mind
+**Deposit:** $200.00 due Apr 21, 2026     **Balance:** $9,606.99 due Jan 15, 2027
 
-### What the user's matrix view in their note shows
+Offer: **Standard Price**
+```
 
-The user's screenshot showed a dining plan × ticket type matrix. That's not what Disney prices — Disney quotes each combo independently, and the deltas in addOnOptions are vs the currently selected combo. So a single quote produces ONE pair of matrices (type-swap + day-swap), not a 4×4 grid. If the user wants to see all 16 combos, they need to call `explore_rates` 16 times (or you compute them by adding the deltas — but be transparent that you're computing rather than re-quoting).
+Render this verbatim. Each line is one component the user selected — render every line, don't combine, don't summarize. The Grand Total at the bottom must equal the sum of the line items (and that's what the user verifies against Disney's checkout).
+
+### Only show what the user opted into
+
+The tool already filters: if the user said no Memory Maker, no MM line appears. If diningPlan is "none", no dining line. So if you don't see a line for something, it's because the user opted out — don't add it back, don't write a footnote saying "Memory Maker is also available for $185". Stay faithful to the breakdown the tool returned.
+
+### Don't fabricate alternatives
+
+Earlier versions of the tool emitted a "switch ticket type / switch days" matrix. That matrix is now removed because the user's reference UI doesn't show alternatives — only the selected configuration. If the user wants to compare alternatives, the answer is to ask them which alternative they want to price and call `explore_rates` again with the new params. Do NOT manually compute alternative prices by adding deltas — Disney prices each combo independently and the math doesn't always line up.
 
 ## WDW-specific gotchas
 

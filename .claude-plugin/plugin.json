@@ -1,6 +1,6 @@
 {
   "name": "room-genie",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "description": "Skills that teach Claude how to use the Room Genie MCP server for Disney hotel and cruise pricing, availability, and alerts across WDW, DLR, Aulani, and DCL.",
   "author": {
     "name": "Room Genie",
