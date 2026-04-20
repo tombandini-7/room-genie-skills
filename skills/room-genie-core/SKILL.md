@@ -49,18 +49,23 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
 8. **Multi-room requests in a single turn.** If the user asks for multiple rooms with different parties in the same message (e.g. "price a room for 2 adults and another for 2 adults + 1 child at the same resort"), call `explore_rates` once per party. Then present **one combined section**: per-room blocks with party/category/total/deposit/balance, plus a clearly labeled **Combined Package Total** line that sums the grand totals and a **Combined Deposit** line that sums the deposits. Same resort, same dates, just each room as its own card inside one response.
 
-9. **LIST BEFORE YOU PRICE (hotels only).** For WDW, DLR, and Aulani, never jump straight to `explore_rates` for a resort without first calling `list_room_types({ resortId })` and asking the user which specific rooms they want priced. Each room = a separate 25–30s cart flow, so pricing all rooms at a Deluxe resort is ~10 minutes of scraping that usually isn't what the user wants. The right flow is:
+9. **LIST BEFORE YOU PRICE (hotels only) — HARD STOP.** For WDW, DLR, and Aulani, you MUST call `list_room_types({ resortId })`, present the room list to the user, and **wait for them to reply with their picks** before calling `explore_rates`. Do NOT price rooms on the user's behalf "to be helpful" — even if the user supplied dates, party, tickets, and every other field in their very first message. The rooms are the ONE thing the user always needs to choose. Each room is a separate 25–30s cart flow, so pricing all rooms at a Deluxe resort is ~5 minutes of scraping that the user almost never wants.
+
+   The mandatory flow:
 
    ```
    list_resorts({ query })         → resortId
-   list_room_types({ resortId })   → show room list
-   "Which would you like me to price?" → user picks 1–4 rooms
+   list_room_types({ resortId })   → present the list in chat
+   ⛔ STOP. Wait for the user to pick rooms. DO NOT CALL explore_rates YET.
+   user replies with picks       → map names to ids
    explore_rates({ roomTypes: [only the picked ids] })
    ```
 
-   Exception: if the user explicitly says "price everything at this resort" or "compare all rooms", pass an empty `roomTypes` array and warn them it'll take a few minutes. Default behavior is always "pick first".
+   Exception: only if the user explicitly typed "price every room" or "compare all rooms" in their message — then pass an empty `roomTypes` array and warn them about the duration. "Price me Grand Floridian" is NOT an explicit request for every room.
 
    For Disney Cruise Line this rule does NOT apply — see disney-cruise-planner for the cruise-specific flow (prices all categories in one scrape).
+
+11. **Never invent a recipient, client, traveler, or reference name.** When presenting a quote, don't attach a human name the user didn't provide (e.g. don't write "Here's the Boettcher-style quote" or "For the Johnson family"). The header should reference the resort + dates + party, never a fabricated person. If the user gave a name, use it exactly; if they didn't, don't make one up.
 
 ## Standard workflows
 

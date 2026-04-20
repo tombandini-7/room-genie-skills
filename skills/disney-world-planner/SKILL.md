@@ -171,8 +171,22 @@ When the user asks a follow-up like:
 - "What if it's 5 days instead of 4?"
 - "How much is the Deluxe dining plan?"
 - "How much is Memory Maker?"
+- **"Give me dining plan options as the incremental cost"** / "show me dining upsells" / "what's each dining plan add?"
 
 **Read from `structuredContent.addOnOptions` in the last `explore_rates` result. Do NOT call `explore_rates` again.** Re-calling launches a fresh browser + 25–30s cart flow for data you already have. That's the single biggest perf regression Claude can cause in this app.
+
+### Dining upsell — the canonical case
+
+If the user asks for "dining plan options as incremental costs" (common for travel-agent-style upsell prep), ONE `explore_rates` call with `diningPlan: "none"` is all you need. Then compute the delta for each plan from `addOnOptions.dining.planOptions`:
+
+```
+none            = 0
+quick_service   = planOptions.find(p => p.dineType === 'quickServiceDine').diningCost
+standard        = planOptions.find(p => p.dineType === 'regularDine').diningCost
+deluxe          = planOptions.find(p => p.dineType === 'deluxeDine').diningCost (2027+ only)
+```
+
+Present as a single table with the baseline (no plan) grand total, then each plan's incremental cost and the resulting total. Do NOT call `explore_rates` three times to produce this — the first call already returned all four variants.
 
 Observed bug (v0.23 and earlier): Claude was calling `explore_rates` 5 times in parallel — once per ticket type — for the same room + dates. Each call ran a full cart flow. That's ~2.5 minutes of browser work to answer a question that was already answered by the first call.
 
