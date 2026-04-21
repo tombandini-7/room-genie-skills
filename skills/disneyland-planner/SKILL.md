@@ -1,6 +1,6 @@
 ---
 name: disneyland-planner
-description: Use this skill BEFORE calling `explore_rates` or `create_alert` for Disneyland Resort in California — any of the three on-property hotels (Disneyland Hotel, Grand Californian Hotel & Spa, Pixar Place Hotel / Paradise Pier, Villas at the Grand Californian) or any conversation about Disneyland Park, California Adventure, DCA, Downtown Disney, Anaheim. Contains the DLR follow-up questionnaire (ticketDays 1-5 NOT 2-10, narrower ticket set — no water-parks-sport or plus, NEVER ask about a dining plan since DLR doesn't have one, Memory Maker, Travel Protection), and cross-hotel comparison patterns. Do NOT use for Walt Disney World in Florida — use disney-world-planner for that instead.
+description: Use this skill BEFORE calling `explore_rates` or `create_alert` for Disneyland Resort in California — any of the three on-property hotels (Disneyland Hotel, Grand Californian Hotel & Spa, Pixar Place Hotel / Paradise Pier, Villas at the Grand Californian) or any conversation about Disneyland Park, California Adventure, DCA, Downtown Disney, Anaheim. Contains the DLR follow-up questionnaire (ticketDays 1-5 NOT 2-10, narrower ticket set — no water-parks-sport or plus, NEVER ask about a dining plan since DLR doesn't have one, NEVER ask about Memory Maker since DLR doesn't support it, only Travel Protection), and cross-hotel comparison patterns. Do NOT use for Walt Disney World in Florida — use disney-world-planner for that instead.
 ---
 
 # Disneyland Resort — trip planner
@@ -34,7 +34,7 @@ Disneyland **does not offer a dining plan** like WDW does. Always use `diningPla
 
 ## Memory Maker
 
-- **PhotoPass+ / Memory Maker** is available at DLR but priced differently from WDW. Our `explore_rates` handles DLR's pricing automatically — set `memoryMaker: true` if the user wants it.
+DLR does **not** offer Memory Maker as a package add-on through the Disney booking flow. Always pass `memoryMaker: false` for DLR. Do NOT ask the user about it — if they ask, explain Memory Maker is WDW-only in the package flow (DLR's equivalent PhotoPass product is purchased separately on-site or in the app).
 
 ## Travel Protection
 
@@ -70,11 +70,9 @@ DLR has fewer knobs than WDW. Ask dates FIRST, then package specifics.
 
 6. **Dining plan:** DO NOT ASK. DLR has no dining plan — always pass `diningPlan: "none"` silently. If the user asks for one, explain DLR doesn't offer one.
 
-7. **Memory Maker?** — ask as a **separate** yes/no question. Default no.
+7. **Memory Maker:** DO NOT ASK. DLR has no Memory Maker package add-on — always pass `memoryMaker: false` silently. If the user asks, explain it's WDW-only in the package flow.
 
-8. **Travel Protection?** — ask as a **separate** yes/no question. $99/adult, children free. Default no.
-
-Do NOT bundle Memory Maker + Travel Protection into the same question — they're separate products.
+8. **Travel Protection?** — ask as a **separate** yes/no question. $99/adult, children free. Default no. This is the ONLY paid add-on to offer at DLR.
 
 ### If dates are missing
 
@@ -85,13 +83,14 @@ Ask for dates + party first, then come back with the package questions.
 1. `list_resorts({ query: "Disneyland" })` — returns the 3 DLR hotels (plus Pixar Place if listed under its new name).
 2. **`list_room_types({ resortId })` — REQUIRED before pricing.** Show the user the room list and ask which they want priced. DLR hotels have fewer rooms than WDW (usually 4–8), but each is still a separate cart flow — don't default to all-rooms. Let the user pick 1–3.
 3. User picks rooms → record the `roomTypes` UUID array.
-4. Collect DLR follow-up answers above (dates, party, package vs room-only, ticket days / type, Memory Maker, Travel Protection — no dining plan).
-5. `explore_rates({ mode: "package", roomTypes: [<picked ids>], ... diningPlan: "none" })`.
+4. Collect DLR follow-up answers above (dates, party, package vs room-only, ticket days / type, Travel Protection — no dining plan, no Memory Maker).
+5. `explore_rates({ mode: "package", roomTypes: [<picked ids>], ... diningPlan: "none", memoryMaker: false })`.
 6. Render result with deposit + balance + due dates. Offer price-drop alert if interesting.
 
 ## DLR-specific gotchas
 
 - **No dining plan** — reiterate if the user asks.
+- **No Memory Maker** — DLR doesn't offer Memory Maker as a package add-on. If the user asks, explain it's WDW-only in the package flow; PhotoPass at DLR is bought separately on-site.
 - **Pixar Place Hotel** was renamed from Paradise Pier in 2024; `list_resorts` may return either or both names depending on DB state. Use the returned name.
 - **Grand Californian has DVC villas** (Villas at the Grand Californian) — a separate resort record. Disambiguate if the user wants the villas specifically.
 - **Ticket days**: DLR tickets max out at 5 days. Reject or warn if the user asks for a 7-day DLR ticket.
