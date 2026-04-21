@@ -41,11 +41,11 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
 7. **Ask about pricing shape before calling.** If the user hasn't explicitly said "package" or "room only", ask: *"Want a full package quote (tickets + dining + add-ons) or just room pricing?"* THEN use the product-specific skill (disney-world-planner / disneyland-planner / aulani-planner / disney-cruise-planner) to collect the right follow-ups for that product — the required fields and valid ranges differ per product.
 
-8. **Never invent package fields.** If `mode: "package"`, you need: `ticketDays`, `ticketType`, `diningPlan`, `memoryMaker` (bool), `travelProtection` (bool). Valid ranges, user-facing labels, and defaults differ per product — ask.
+8. **Never invent package fields.** If `mode: "package"`, the required fields depend on the product. **WDW**: `ticketDays`, `ticketType`, `diningPlan`, `memoryMaker`, `travelProtection`. **DLR**: `ticketDays`, `ticketType`, `travelProtection` (NO `diningPlan`, NO `memoryMaker` — DLR doesn't support them). **Aulani**: `travelProtection` only (NO tickets/dining/MM). **DCL**: none of these apply — pass `sailingId`, `stateroomCategory`, `stateroomType`. Valid ranges, user-facing labels, and defaults differ per product — ask the product-specific skill.
 
 9. **User-facing labels ≠ API values.** When offering options to the user, use human-friendly names (e.g. "1 Park Per Day", "Park Hopper", "Waterpark & Sports", "Park Hopper Plus", "Disney Dining Plan", "Table Service"). Map to the API enum only when calling the tool. Never surface raw enum strings like `no-option` or `water-parks-sport` to the user.
 
-10. **Memory Maker and Travel Protection are separate questions.** Always ask them as two distinct yes/no decisions, never bundled. They're different products with different pricing ($185 flat vs $99/adult).
+10. **Memory Maker is WDW-ONLY.** DO NOT ask users about Memory Maker for DLR, Aulani, or DCL — those products don't offer it as a package add-on. For WDW, ask Memory Maker and Travel Protection as two separate yes/no questions (different products, different pricing: $185 flat vs $99/adult). Never bundle them into a single question.
 
 8. **Multi-room requests in a single turn.** If the user asks for multiple rooms with different parties in the same message (e.g. "price a room for 2 adults and another for 2 adults + 1 child at the same resort"), call `explore_rates` once per party. Then present **one combined section**: per-room blocks with party/category/total/deposit/balance, plus a clearly labeled **Combined Package Total** line that sums the grand totals and a **Combined Deposit** line that sums the deposits. Same resort, same dates, just each room as its own card inside one response.
 
@@ -204,7 +204,7 @@ On yes, call `create_alert` with `alertType: "availability"` and `currentPrice: 
 Offer one or two of these, not all:
 - "Compare to a different resort for the same dates?"
 - "Try shifting the dates by a week to see if midweek saves money?"
-- If `mode: "package"`: "Try without Memory Maker or the dining plan to see the savings?"
+- If `mode: "package"` at WDW: "Try without Memory Maker or the dining plan to see the savings?" (WDW-only — DLR/Aulani/DCL don't offer those add-ons.)
 
 **After `list_resorts` or `list_room_types`:**
 - "Which one do you want me to check for your dates?"
