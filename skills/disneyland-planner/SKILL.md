@@ -87,28 +87,6 @@ Ask for dates + party first, then come back with the package questions.
 5. `explore_rates({ mode: "package", roomTypes: [<picked ids>], ... diningPlan: "none", memoryMaker: false })`.
 6. Render result with deposit + balance + due dates. Offer price-drop alert if interesting.
 
-## One `explore_rates` call already priced every day count + ticket type — DO NOT re-call
-
-The DLR cart flow (single 25–30s scrape) returns **every day count (1–5) × every ticket type (1 Park Per Day / Park Hopper / Lightning Lane / Park Hopper + Lightning Lane)** in one shot. The MCP tool surfaces all of it in `structuredContent.addOnOptions`:
-
-```
-addOnOptions.tickets.selectedDays / selectedType   ← what you priced
-addOnOptions.tickets.typeOptions[]                 ← alt types at selected day count, with admissionDelta pre-computed
-addOnOptions.tickets.dayOptions[]                  ← every day count 1–5, each with typeOptions[{ id, admissionTotal }]
-addOnOptions.travelProtection                      ← { selected, total, adults } — $99 × adults
-```
-
-When the user asks "what about 3 days instead of 2?" or "how much does Park Hopper add on a 4-day?" — READ the prior response's `addOnOptions`, compute the delta, and report the new total. **Do NOT call `explore_rates` again** unless the resort, dates, or party size changes.
-
-Formula for a new package total without re-calling:
-```
-current = addOnOptions.tickets.dayOptions.find(d => d.days === <prev>).typeOptions.find(t => t.id === <prevType>).admissionTotal
-alt     = addOnOptions.tickets.dayOptions.find(d => d.days === <new>).typeOptions.find(t => t.id === <newType>).admissionTotal
-newGrandTotal = previousGrandTotal + (alt − current)
-```
-
-DLR has NO dining plan and NO Memory Maker so you won't see `dining.planOptions` or `memoryMaker` on DLR responses — those fields are null. Only tickets + Travel Protection vary. If you re-call within 2 minutes on the same (resort, dates, party) the MCP server will refuse the scrape and return the prior response with a banner.
-
 ## DLR-specific gotchas
 
 - **No dining plan** — reiterate if the user asks.

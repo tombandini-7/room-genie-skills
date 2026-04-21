@@ -47,25 +47,6 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
 10. **Memory Maker is WDW-ONLY.** DO NOT ask users about Memory Maker for DLR, Aulani, or DCL — those products don't offer it as a package add-on. For WDW, ask Memory Maker and Travel Protection as two separate yes/no questions (different products, different pricing: $185 flat vs $99/adult). Never bundle them into a single question.
 
-10b. **ONE `explore_rates` PACKAGE CALL ALREADY PRICED EVERY VARIANT — DO NOT RE-CALL.** Disney's ticket-options and dining-options endpoints return the FULL GRID in a single cart flow. The MCP server packs all of it into `structuredContent.addOnOptions` on every package response. When the user asks "what about 5/6/7/8 days?", "how much does Park Hopper add?", "what's the incremental cost of each dining plan?", "how much is Memory Maker?", or "what if we add Travel Protection?" — READ the prior response's `structuredContent.addOnOptions`. Do NOT call `explore_rates` a second time unless the **resort, dates, or party size** changes.
-
-   Fields in `structuredContent.addOnOptions`:
-   - `tickets.selectedDays`, `tickets.selectedType` — what was priced.
-   - `tickets.typeOptions[]` — alternative types at the selected day count; each has `admissionTotal` + `admissionDelta` (delta pre-computed).
-   - `tickets.dayOptions[]` — EVERY day count (WDW 2–10, DLR 1–5) with its own `typeOptions[{ id, admissionTotal }]`. Covers "what about 6 days?" or "what does Park Hopper add on day 7?".
-   - `dining.planOptions[]` — every plan with `diningCost` + `diningDelta` (pre-computed). WDW only.
-   - `memoryMaker: { selected, price }` — $185 flat. WDW only.
-   - `travelProtection: { selected, total, adults }` — $99 × adults.
-
-   To derive a new total WITHOUT re-calling:
-   ```
-   current = addOnOptions.tickets.dayOptions.find(d => d.days === <prev>).typeOptions.find(t => t.id === <prevType>).admissionTotal
-   alt     = addOnOptions.tickets.dayOptions.find(d => d.days === <new>).typeOptions.find(t => t.id === <newType>).admissionTotal
-   newGrandTotal = previousGrandTotal + (alt − current)
-   ```
-
-   If you do re-call within 2 minutes on the same (resort, dates, party), the MCP server refuses and returns the prior response with a loud banner re-surfacing `addOnOptions`. Read it the first time instead.
-
 8. **Multi-room requests in a single turn.** If the user asks for multiple rooms with different parties in the same message (e.g. "price a room for 2 adults and another for 2 adults + 1 child at the same resort"), call `explore_rates` once per party. Then present **one combined section**: per-room blocks with party/category/total/deposit/balance, plus a clearly labeled **Combined Package Total** line that sums the grand totals and a **Combined Deposit** line that sums the deposits. Same resort, same dates, just each room as its own card inside one response.
 
 9. **LIST BEFORE YOU PRICE (hotels only) — HARD STOP.** For WDW, DLR, and Aulani, you MUST call `list_room_types({ resortId })`, present the room list to the user, and **wait for them to reply with their picks** before calling `explore_rates`. Do NOT price rooms on the user's behalf "to be helpful" — even if the user supplied dates, party, tickets, and every other field in their very first message. The rooms are the ONE thing the user always needs to choose. Each room is a separate 25–30s cart flow, so pricing all rooms at a Deluxe resort is ~5 minutes of scraping that the user almost never wants.
