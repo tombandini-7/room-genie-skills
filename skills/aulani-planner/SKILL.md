@@ -45,7 +45,11 @@ Aulani has ONLY ONE paid add-on — don't ask about tickets, dining, or Memory M
 
 ### Then ask the one paid add-on
 
-3. **Travel Protection?** — ask as a **separate** yes/no question. $99/adult, children free. Aulani's only paid add-on in the package flow. Default no, but worth offering for longer or costlier stays.
+3. **Travel Protection?** — ask as a **simple yes/no question**, never a multi-choice. $99/adult, children free. Aulani's only paid add-on. Default no, but worth offering for longer or costlier stays.
+
+   **Ask it exactly like this:** "Would you like Travel Protection added? (Yes / No)"
+
+   **Do NOT invent multi-choice options** like "Package with airfare", "Package with airfare/protection", "Air + hotel", "Ground transport", or "Flights". **None of those exist at Aulani through Room Genie.** Aulani does not sell tickets, dining, Memory Maker, airfare, flights, or ground transport as package add-ons — only Travel Protection. If you present any of those as choices, the user will pick one and the alert will be wrong.
 
 ### If dates are missing
 
