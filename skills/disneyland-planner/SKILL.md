@@ -17,16 +17,14 @@ Layer this on top of `room-genie-core`. Disneyland Resort has fewer moving parts
 
 There is no "Value" or "Moderate" category at DLR — all three are premium. If a user wants budget, they'll need a Good Neighbor hotel (not in Room Genie).
 
-## Ticket types (DLR uses a slimmer set than WDW)
+## Ticket types
 
-Pass these values as `ticketType`:
+**Labels to show the user** (DLR has a slimmer set than WDW — only these two in the consumer pick list):
 
-- `no-option` — one park per day (either Disneyland or California Adventure, chosen day-of)
-- `park-hopper` — hop between Disneyland and DCA same day
-- `genie-plus` — Lightning Lane (DLR equivalent of Genie+)
-- `park-hopper-genie-plus` — hop + Lightning Lane
+- **"1 Park Per Day"**
+- **"Park Hopper"**
 
-**Don't use**: `water-parks-sport` or `plus` — those are WDW-only.
+Never show the API enum (`no-option`, `park-hopper`) in chat. Never show "Base" — that's not a label we use. `genie-plus` and `park-hopper-genie-plus` exist in the API but are not offered in the consumer questionnaire; `water-parks-sport` and `plus` are WDW-only. Default to "1 Park Per Day" if the user hasn't expressed a preference.
 
 ## Dining
 
@@ -60,13 +58,11 @@ DLR has fewer knobs than WDW. Ask dates FIRST, then package specifics.
 
 4. **Number of park days** (integer 1–5). DLR maxes at 5, UNLIKE WDW. 3 is the most common DLR length.
 
-5. **Ticket type** — present ONLY these four labels to the user:
-   - **1 Park Per Day** (maps to `no-option`)
-   - **Park Hopper** (maps to `park-hopper`) — most DLR guests pick this since the parks are next to each other
-   - **Lightning Lane** (maps to `genie-plus`) — adds Lightning Lane passes
-   - **Park Hopper + Lightning Lane** (maps to `park-hopper-genie-plus`)
+5. **Ticket type** — show the user EXACTLY these two labels, verbatim:
+   - **"1 Park Per Day"**
+   - **"Park Hopper"** — most DLR guests pick this since the parks are next to each other
 
-   Do NOT offer `plus` (Park Hopper Plus) or `water-parks-sport` — those are WDW-only.
+   Never show "Base" and never show the API enum (`no-option`, `park-hopper`) in user-facing text. Park Hopper Plus and Waterpark & Sports are WDW-only; Lightning Lane variants are in the API but are NOT offered in the DLR consumer questionnaire — do not surface them unless the user explicitly asks.
 
 6. **Dining plan:** DO NOT ASK. DLR has no dining plan — always pass `diningPlan: "none"` silently. If the user asks for one, explain DLR doesn't offer one.
 

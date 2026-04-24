@@ -17,27 +17,37 @@ Layer this on top of `room-genie-core`. Use the MCP tools from that skill; this 
 | Deluxe Villa (DVC) | Bay Lake Tower, Grand Floridian Villas, Polynesian Villas, BoardWalk Villas, Beach Club Villas, Old Key West, Saratoga Springs, Copper Creek, Riviera, Animal Kingdom Villas | $500–1500+ | Kitchens, more space, longer stays |
 | Other | Swan, Dolphin, Swan Reserve (Marriott, Disney perks) | varies | Bonvoy points, often cheaper than Deluxe |
 
-## Ticket types (`ticketType` for `explore_rates` / `create_alert`)
+## Ticket types
 
-| Value | What it is |
-|---|---|
-| `no-option` | Standard one-park-per-day |
-| `park-hopper` | Hop between parks same day |
-| `water-parks-sport` | Park + Blizzard Beach/Typhoon Lagoon/sports admissions |
-| `plus` | Park Hopper + Water Parks |
-| `genie-plus` | Includes Lightning Lane (formerly Genie+) |
-| `park-hopper-genie-plus` | Park Hopper + Lightning Lane |
+**Labels to show the user** (always quote these verbatim in chat and pickers):
 
-Default to `no-option` if the user hasn't expressed a preference; ask before assuming hopper.
+- **"1 Park Per Day"**
+- **"Park Hopper"**
+- **"Waterpark & Sports"**
+- **"Park Hopper Plus"**
 
-## Dining plans (`diningPlan`)
+Never show "Base", "Standard", or the API enum (`no-option`, `plus`, etc.) in user-facing text. Those are internal values Claude translates to on the tool call — not names users should ever see.
 
-- `none` — no plan (most flexible)
-- `quick_service` — counter-service only, cheapest plan
-- `standard` — includes one table-service meal per night (the classic plan)
-- `deluxe` — three table-service credits per night (foodies)
+Default to "1 Park Per Day" if the user hasn't expressed a preference; ask before assuming hopper. `genie-plus` / `park-hopper-genie-plus` exist in the API but are not part of the consumer-facing pick list — do not offer them.
 
-Don't push a plan unless the user asks. When they do ask "is the dining plan worth it?", steer them to run `explore_rates` twice (once with `none`, once with the plan they're considering) and compare total.
+## Dining plans
+
+**Labels to show the user** (year-dependent — check-in year determines the set):
+
+- **2026 check-in** — offer exactly these three:
+  - **"None"**
+  - **"Quick Service"**
+  - **"Disney Dining Plan"**
+  - Never show "Deluxe" for 2026 — Disney doesn't sell it that year.
+- **2027+ check-in** — offer exactly these four:
+  - **"None"**
+  - **"Quick Service"**
+  - **"Table Service"**
+  - **"Deluxe Table Service"**
+
+Never show "Standard" — that's the API enum, not a user-facing label. Never show the enum values (`none`, `quick_service`, `standard`, `deluxe`) in chat.
+
+Don't push a plan unless the user asks. When they do ask "is the dining plan worth it?", read the delta column from `show_price_matrix` — don't re-run `explore_rates`.
 
 ## Memory Maker + Travel Protection
 
@@ -60,27 +70,30 @@ The year of the check-in date determines which dining plans Disney sells, so dat
 
 4. **Number of park days** (integer 2–10). WDW tickets start at 2 days.
 
-5. **Ticket type** — present ONLY these four labels to the user, not the raw enum values:
-   - **1 Park Per Day** (maps to `no-option`)
-   - **Park Hopper** (maps to `park-hopper`)
-   - **Waterpark & Sports** (maps to `water-parks-sport`)
-   - **Park Hopper Plus** (maps to `plus`)
+5. **Ticket type** — show the user EXACTLY these four labels, verbatim, and forbid the wrong forms by name in your own prompt:
+   - **"1 Park Per Day"**
+   - **"Park Hopper"**
+   - **"Waterpark & Sports"**
+   - **"Park Hopper Plus"**
 
-   Don't surface `genie-plus` / `park-hopper-genie-plus` as options in conversation — they exist in the API but aren't part of the standard consumer-facing pick list.
+   Never show "Base" (it is not a label we use) and never show the API enum (`no-option`, `park-hopper`, `water-parks-sport`, `plus`) in user-facing text. On the tool call itself, pass the enum value that corresponds to the label the user picked — but that translation happens silently.
 
-6. **Dining plan** — the offered set depends on the **check-in year**:
+6. **Dining plan** — the offered set depends on the **check-in year**. Present whichever full list applies:
 
-   - **2026 (check-in in 2026)** — offer:
-     - None (maps to `none`)
-     - Quick Service (maps to `quick_service`)
-     - Disney Dining Plan (maps to `standard`)
-   - **2027 and later** — offer:
-     - None (maps to `none`)
-     - Quick Service (maps to `quick_service`)
-     - Table Service (maps to `standard`)
-     - Deluxe Table Service (maps to `deluxe`)
+   - **2026 check-in** — show exactly these three labels verbatim:
+     - **"None"**
+     - **"Quick Service"**
+     - **"Disney Dining Plan"**
 
-   NEVER offer Deluxe for a 2026 check-in — Disney doesn't sell it that year. If the user requests Deluxe for a 2026 trip, tell them it only becomes available for 2027+ arrivals and fall back to Disney Dining Plan.
+     Deluxe is NOT sold for a 2026 check-in — do not offer it. If the user requests Deluxe for a 2026 trip, tell them it only becomes available for 2027+ arrivals and fall back to Disney Dining Plan.
+
+   - **2027+ check-in** — show exactly these four labels verbatim:
+     - **"None"**
+     - **"Quick Service"**
+     - **"Table Service"**
+     - **"Deluxe Table Service"**
+
+   Never show "Standard" as a label — that is the API enum, not the user-facing name. Never show the bare enum values (`none`, `quick_service`, `standard`, `deluxe`) in chat.
 
 7. **Memory Maker?** — ask as a **separate** yes/no question. $185 flat, unlimited PhotoPass photos. Default no.
 
@@ -154,41 +167,35 @@ Render this verbatim. Each line is one component the user selected — render ev
 
 The tool already filters: if the user said no Memory Maker, no MM line appears. If diningPlan is "none", no dining line. So if you don't see a line for something, it's because the user opted out — don't add it back, don't write a footnote saying "Memory Maker is also available for $185". Stay faithful to the breakdown the tool returned.
 
-### One `explore_rates` call already priced every alternative — don't re-call
+### One `explore_rates` call already priced every alternative — use `show_price_matrix`, don't re-call
 
-Disney's cart flow (the thing that takes 25–30 seconds per room) returns **every** ticket type, **every** day count, and **every** dining plan in the same response. The MCP tool passes all of it through in `structuredContent.addOnOptions`:
+Disney's cart flow (the thing that takes 25–30 seconds per room) returns **every** ticket type, **every** day count, and **every** dining plan in the same response. The MCP server caches that payload for 10 minutes so a companion tool, `show_price_matrix`, can render it as two markdown tables on demand:
 
-```
-addOnOptions.tickets.typeOptions     ← admission total for 1 Park Per Day / Park Hopper / Waterpark & Sports / Park Hopper Plus, at the selected day count
-addOnOptions.tickets.dayOptions      ← admission total for 2-day / 3-day / 4-day / … / 10-day, at each ticket type
-addOnOptions.dining.planOptions      ← cost for No Plan / Quick Service / Standard / Deluxe
-addOnOptions.memoryMaker.price       ← flat $185 add-on
-addOnOptions.travelProtection.total  ← $99 × adults
-```
+- The full **day × ticket-type admission grid** (every day count 2–10, crossed with every ticket type, with exact admission totals).
+- The full **dining-plan table** — every plan's total and "Δ vs current" cost relative to the user's pick.
+
+**How to use it.** After a WDW package `explore_rates` call:
+
+1. Emit EVERY room quote as your reply first (each room's breakdown table, deposit, offer, etc.).
+2. Then call `show_price_matrix` once, with no arguments — the server reads the cache automatically. Do not try to pass `addOnOptions`; Claude cannot see `structuredContent` at all anymore.
+3. Paste the matrix output verbatim as the final section of the same reply.
+
+Never call `show_price_matrix` between rooms or once per room — one call at the END of the reply covers every room (the matrix is identical across rooms at the same resort/dates/party).
 
 When the user asks a follow-up like:
 - "What would Park Hopper add?"
 - "What if it's 5 days instead of 4?"
-- "How much is the Deluxe dining plan?"
+- "How much is Deluxe Table Service?"
 - "How much is Memory Maker?"
 - **"Give me dining plan options as the incremental cost"** / "show me dining upsells" / "what's each dining plan add?"
 
-**Read from `structuredContent.addOnOptions` in the last `explore_rates` result. Do NOT call `explore_rates` again.** Re-calling launches a fresh browser + 25–30s cart flow for data you already have. That's the single biggest perf regression Claude can cause in this app.
+**Read from the `show_price_matrix` output you already pasted. Do NOT call `explore_rates` again.** Re-calling launches a fresh 25–30s cart flow for data already on screen. That's the single biggest perf regression Claude can cause in this app. If the matrix is stale (more than 10 minutes since the last explore_rates call, or the user changed dates/party/rooms), you'll need a fresh `explore_rates` — `show_price_matrix` will say "no recent quote" and you should start over from step 1.
 
 ### Dining upsell — the canonical case
 
-If the user asks for "dining plan options as incremental costs" (common for travel-agent-style upsell prep), ONE `explore_rates` call with `diningPlan: "none"` is all you need. Then compute the delta for each plan from `addOnOptions.dining.planOptions`:
+If the user asks for "dining plan options as incremental costs" (common for travel-agent-style upsell prep), ONE `explore_rates` call with the user's preferred dining pick (usually "None") is all you need, followed by a single `show_price_matrix` call. The dining table in the matrix shows every plan's total and Δ — read directly from it; never estimate.
 
-```
-none            = 0
-quick_service   = planOptions.find(p => p.dineType === 'quickServiceDine').diningCost
-standard        = planOptions.find(p => p.dineType === 'regularDine').diningCost
-deluxe          = planOptions.find(p => p.dineType === 'deluxeDine').diningCost (2027+ only)
-```
-
-Present as a single table with the baseline (no plan) grand total, then each plan's incremental cost and the resulting total. Do NOT call `explore_rates` three times to produce this — the first call already returned all four variants.
-
-Observed bug (v0.23 and earlier): Claude was calling `explore_rates` 5 times in parallel — once per ticket type — for the same room + dates. Each call ran a full cart flow. That's ~2.5 minutes of browser work to answer a question that was already answered by the first call.
+Observed bug (v0.23 and earlier): Claude was calling `explore_rates` 5 times in parallel — once per ticket type — for the same room + dates. Each call ran a full cart flow. That's ~2.5 minutes of browser work to answer a question that was already answered by the first call + one matrix render.
 
 ### When it IS okay to re-call
 
