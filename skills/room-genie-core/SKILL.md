@@ -1,6 +1,6 @@
 ---
 name: room-genie-core
-description: Use this skill EVERY TIME you are about to call any `mcp__room-genie-dev__*` or `mcp__room-genie__*` tool (list_alerts, get_alert, create_alert, toggle_alert, delete_alert, list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, get_my_profile, explore_rates). Covers the required ordering of tool calls, confirmation rules before mutations, the post-result presentation format (per-room blocks with total/deposit/balance/due dates, multi-room combined totals), and the alert-offering flow (one alert per room, exact-price threshold suggestion, `get_my_profile` for notification defaults, availability alert for sold-out rooms). Applies across all four Room Genie products (WDW, DLR, Aulani, DCL). Also the right skill when the user mentions "Room Genie", "my alerts", "watch this price", "availability alert", or "price drop alert".
+description: Use this skill EVERY TIME you are about to call any `mcp__room-genie-dev__*` or `mcp__room-genie__*` tool (list_alerts, get_alert, create_alert, toggle_alert, delete_alert, list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, get_my_profile, explore_rates, show_price_matrix, generate_quote_pdf, list_quote_pdfs). Covers the required ordering of tool calls, confirmation rules before mutations, the post-result presentation format (per-room blocks with total/deposit/balance/due dates, multi-room combined totals), the THREE-WAY POST-MATRIX PROMPT (price-drop alert / availability alert / PDF quote), the alert-offering flow (one alert per room, exact-price threshold suggestion, `get_my_profile` for notification defaults, availability alert for sold-out rooms), and the PDF quote flow (per-destination add-on toggles before calling generate_quote_pdf). Applies across all four Room Genie products (WDW, DLR, Aulani, DCL). Also the right skill when the user mentions "Room Genie", "my alerts", "watch this price", "availability alert", "price drop alert", or "PDF quote".
 ---
 
 # Room Genie — Core workflows
@@ -23,6 +23,8 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 | `delete_alert` | Permanently delete an alert |
 | `explore_rates` | Query live HOTEL rates: `mode: "availability" | "room-only" | "package"` (WDW / DLR / Aulani only). For cruises use `cruise_list_categories`. |
 | `show_price_matrix` | Render the full ticket + dining pricing grids from the cached last `explore_rates` package response. PRESENTATIONAL ONLY — no new scrape, no arguments needed. Call AFTER emitting the quote text to the user. |
+| `generate_quote_pdf` | Render a branded multi-page client-facing PDF (cover, per-room sections with photos, optional add-ons comparison, terms page). Requires the Explorer subscription. Call ONLY after asking the user the mandatory pre-call questions enumerated in the tool description (which rooms, optional quoteName/clientName/notes, per-destination add-on display toggles). **Auto-saves to /quotes** — the user can pull it back later via `list_quote_pdfs` even after the 7-day signed URL expires. |
+| `list_quote_pdfs` | List the user's saved quote PDFs with **freshly-signed download URLs** (re-signed on each call, so URLs in the result are always good for 7 days from the call). Use when the user says "show me my quotes", "send me that PDF I made yesterday", "list my saved PDFs". Optional filters: `query` (substring on quoteName/clientName), `productType` ('hotel' \| 'cruise'), `limit`. |
 
 ## Golden rules
 
@@ -131,8 +133,45 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
     2. Emit EVERY room's quote text to the user as your reply (breakdown table, deposit, offer, per room).
     3. THEN call show_price_matrix()  — NO arguments, ONCE for the whole reply.
     4. Paste every block from show_price_matrix's response verbatim as the final section.
-    5. Optional: add ONE short sentence afterward ("Want to go with any of these? Or should I set a price-drop alert?").
+    5. Close the reply with the THREE-WAY POST-MATRIX PROMPT (see next section). This is mandatory, not optional.
     ```
+
+    **MULTI-RESORT COMPARISON (same dates + party):** The ticket/dining matrix depends on dates + party + check-in year — NOT on the resort. So a "compare Polynesian vs Grand Floridian vs Beach Club for Dec 1–5, 2 adults, 4-day Park Hopper" trip needs ONE matrix at the end, not three. The flow:
+
+    ```
+    1. Call explore_rates ONCE PER RESORT (3 calls for 3 resorts) — fire them in parallel
+       in a single message if you want to save wall time. Each call still does its own
+       25–30s scrape per resort, but the matrix cache is overwritten last-write-wins
+       per user — that's fine because every call at the same dates+party would
+       populate the same matrix anyway.
+    2. Emit EVERY resort's quotes to the user as one combined reply, grouped by resort
+       with clear headings (cheapest first is usually clearest).
+    3. THEN call show_price_matrix() exactly ONCE — it reads the cache from the LAST
+       explore_rates call, but that's OK because the matrix is identical across all
+       resorts in this comparison.
+    4. Paste the matrix blocks verbatim as the final section.
+    5. Three-way post-matrix prompt.
+    ```
+
+    Do NOT call `show_price_matrix` after each individual resort in a same-dates+party comparison — that's N redundant copies of the same tables. One matrix at the end covers them all.
+
+    **MULTI-RESORT COMPARISON with DIFFERING dates** (rare): the matrix changes per `(dates + party + check-in-year)` bucket. Group the resorts by that bucket — for each group, run all that group's `explore_rates` calls, emit those quotes, call `show_price_matrix` ONCE for the group, paste the matrix, then move to the next group. Never more matrix calls than there are distinct (dates + party + check-in year) buckets.
+
+    **Mixed Aulani + WDW/DLR comparison:** Aulani (no tickets/dining) doesn't populate the matrix cache, so an explore_rates Aulani call won't overwrite a matrix you need. Order doesn't matter — the matrix from any WDW/DLR call in the comparison still applies.
+
+    **THREE-WAY POST-MATRIX PROMPT (always end the hotel package reply with this):**
+
+    After the matrix, ask the user which of these they'd like next:
+
+    > "What next? I can (a) set a **price-drop alert** on a room, (b) set an **availability alert** on a sold-out room, or (c) build you a branded **PDF quote** for the client."
+
+    Rules:
+    - **Drop option (b)** when every room came back `available: true`. Don't offer an availability alert when nothing is sold out.
+    - **Drop option (c)** if the user is on the Free / Watcher / single-credit plan — `generate_quote_pdf` requires the Explorer subscription and will return an entitlement error otherwise.
+    - On (a) → run the alert offer flow below (Step A → B → C).
+    - On (b) → run the alert offer flow with `alertType: "availability"`.
+    - On (c) → run the **PDF quote flow** (next section).
+    - Do NOT improvise other follow-ups ("want a full breakdown", "should I check another resort", etc.). The three-way prompt is the canonical post-matrix close.
 
     Skip `show_price_matrix` only when:
     - explore_rates was `mode=availability` or `mode=room-only` (no addOnOptions)
@@ -147,6 +186,49 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
     - omit the preamble/postamble or the header rows
 
     The grids exist so the user can scan the full matrix at once — especially the dining deltas, which are the whole reason the user needs to see the matrix after declining dining.
+
+14. **PDF QUOTE FLOW — gather inputs conversationally before calling `generate_quote_pdf`.** When the user picks option (c) from the three-way post-matrix prompt, do NOT call `generate_quote_pdf` immediately with placeholder data. Walk the user through the same questions the in-app `/explore-rates` Quote dialog asks. Ask each in order; never skip:
+
+    1. **Which rooms?** List every room you just quoted by name (grouped by resort if multi-resort), and ask which to include in the PDF. Pass the chosen room ids as `roomIds`. Sold-out rooms are silently dropped (returned in `droppedRoomIds`) — mention any drops in your reply.
+
+    2. **Quote name?** (optional, max 120 chars) Short cover title — e.g. "The Smith Family — WDW Spring 2026". If the user declines, omit and the server defaults to destination + dates.
+
+    3. **Client name?** (optional, max 120 chars) Prepared-for line on the cover. Skip if the user doesn't want it.
+
+    4. **Client-facing notes?** (optional, max 2000 chars) Free text printed on the terms page. Skip if not wanted.
+
+    5. **Add-on display toggles** — *the question set varies by destination*. Determine from the quote's `destinationName` and ONLY ask the toggles that destination actually offers. Never ask about an add-on the destination doesn't sell:
+
+       - **Walt Disney World** (Florida): ask all four —
+         a. Tickets comparison: off / upgrades / downgrades / both
+         b. Dining comparison: off / upgrades / downgrades / both
+         c. Include Memory Maker line: yes / no
+         d. Include Travel Protection line: yes / no
+
+       - **Disneyland Resort** (California): ask only —
+         a. Tickets comparison: off / upgrades / downgrades / both
+         b. Include Travel Protection line: yes / no
+         **NEVER** ask about Dining or Memory Maker — DLR doesn't sell them.
+
+       - **Aulani** (Hawaii): ask only —
+         a. Include Travel Protection line: yes / no
+         **NEVER** ask about Tickets, Dining, or Memory Maker — Aulani doesn't sell any of them.
+
+       - **Disney Cruise Line** (cruise quote): SKIP this section entirely. Omit `addOnDisplay` from the payload.
+
+       Pass the answers as the per-resort `addOnDisplay` config inside each resort block of the quote payload. Default to `'off'` / `false` for any toggle the user declines or that the destination doesn't sell.
+
+    6. **Pass the full `quote` payload** from the most recent `explore_rates` (hotel) or `cruise_list_categories` (cruise) `structuredContent`, with the user's `addOnDisplay` choices merged in per resort. Then call `generate_quote_pdf` ONCE with `{ quote, roomIds, quoteName?, clientName?, notes? }`.
+
+    The tool returns a markdown link to the signed PDF (7-day expiry) plus `structuredContent` with `{ url, expiresAt, sizeBytes, productType, cacheHit, droppedRoomIds }`. Identical payloads dedupe — re-running with the same selection serves the cached PDF instantly.
+
+    **Auto-save**: every MCP-generated PDF is automatically saved to the user's `/quotes` page. When you reply to the user with the download link, also tell them: *"I've saved this to your Quotes page — you can pull it back any time and I'll regenerate the link."* Don't ask "do you want me to save this?" — that's already handled.
+
+    **Retrieving saved PDFs later**: when the user asks for a PDF they made earlier ("send me that quote from yesterday", "show me my saved PDFs", "what did I make for the Smith family"), call `list_quote_pdfs`. It returns every saved quote with a freshly-signed URL (good for another 7 days), so the user gets a working link even months after the original was generated. Use the `query` filter to narrow by quoteName or clientName when the user names a specific one.
+
+    **Failure modes:**
+    - **402 entitlement error** → user is not on Explorer. Tell them they can upgrade at https://app.roomgenie.travel/plans. Don't retry.
+    - **`droppedRoomIds` non-empty** → mention which rooms were dropped (sold out at PDF render time) so the user understands the final PDF is shorter than they expected.
 
 ## Standard workflows
 

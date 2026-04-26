@@ -254,9 +254,8 @@ Tailor follow-ups to the resort tier and package shape. Two to three, never more
 - "Set an availability alert so we're notified if anything opens up?"
 
 **After a full package total (with tickets + dining + MM + TP):**
-- "Remove the Dining Plan and re-quote — see if the savings outweigh the convenience."
-- "Try `travelProtection: false` — it's $99/adult. Worth removing if you already have travel insurance."
-- "Want to set a price-drop alert at today's exact price? You can override if you want a buffer."
+- Close with the THREE-WAY POST-MATRIX PROMPT from `room-genie-core`: "(a) price-drop alert on a room, (b) availability alert on any sold-out room (skip if everything is available), or (c) build a branded PDF quote for the client (calls `generate_quote_pdf` — gather inputs first)."
+- Don't pile on extra suggestions; that prompt is the canonical close.
 
 **After `list_room_types` returns many options:**
 - Pick 2–3 likely matches (e.g., "Standard View" vs "Theme Park View" vs "Club Level") and describe the price/experience tradeoff in one line each. Don't dump all 15 rooms.

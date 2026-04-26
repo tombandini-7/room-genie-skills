@@ -78,7 +78,7 @@ When `cruise_list_categories` returns 27 categories, render all 27. The output i
 3. Paste every section header and every markdown table verbatim. The four sections are **Interior**, **Oceanview**, **Oceanview with Verandah**, and **Concierge** — render them as `### Section` H3 headers with their tables underneath. Do NOT collapse to one combined table.
 4. Each row carries: Category, Name, Decks, Location, Rooms, Total, Deposit, Gratuities (per category — Concierge tier uses a higher rate), Total + Gratuities. Render every column.
 5. Render the gratuity-rate footer line and the price-drop alert threshold note too.
-6. Add **exactly one** follow-up question after the tables: *"Want me to set a price-drop or availability alert on any of these categories?"*
+6. Close with the **THREE-WAY POST-MATRIX PROMPT** from `room-genie-core` (cruise variant): *"What next? I can (a) set a **price-drop alert** on a category, (b) set an **availability alert** on a sold-out category — only offer this if any category showed as sold out, or (c) build you a branded **PDF quote** for the client (calls `generate_quote_pdf`)."* Skip option (b) when no category is sold out. Skip (c) on Free / Watcher plans (Explorer-only).
 7. Wait for the user to respond.
 
 **Do NOT ask any of these** — `cruise_list_categories` already has the answer:

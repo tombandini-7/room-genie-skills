@@ -81,6 +81,11 @@ If the user tries to specify any of those, gently correct them: *"Aulani doesn't
 
 ## Suggest next steps after retrieving Aulani data
 
+**Always close an Aulani room-only or availability quote with the THREE-WAY POST-MATRIX PROMPT** from `room-genie-core`: "(a) price-drop alert on a room, (b) availability alert on any sold-out room (skip if everything is available), or (c) build a branded PDF quote for the client (`generate_quote_pdf`)." Aulani has no `show_price_matrix` step (no tickets/dining), but the three-way close still applies. The PDF flow only asks the user about Travel Protection (Aulani's only add-on) — never about tickets, dining, or Memory Maker.
+
+The contextual hooks below are *additional* nudges to use when the user seems undecided — they don't replace the three-way close.
+
+
 **After a Standard Hotel Room quote:**
 - "Want to see what the step up to a Deluxe Studio (DVC) looks like? Often competitive on rate and you get a kitchenette."
 - "Try the view category next to yours — Partial Ocean View is usually $30–80/night above Island View but the photos are very different."

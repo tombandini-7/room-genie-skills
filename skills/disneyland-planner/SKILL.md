@@ -81,7 +81,7 @@ Ask for dates + party first, then come back with the package questions.
 3. User picks rooms → record the `roomTypes` UUID array.
 4. Collect DLR follow-up answers above (dates, party, package vs room-only, ticket days / type, Travel Protection — no dining plan, no Memory Maker).
 5. `explore_rates({ mode: "package", roomTypes: [<picked ids>], ... diningPlan: "none", memoryMaker: false })`.
-6. Render result with deposit + balance + due dates. Offer price-drop alert if interesting.
+6. Render result with deposit + balance + due dates, then `show_price_matrix` (DLR has tickets), then close with the three-way post-matrix prompt: price-drop alert / availability alert (only if anything is sold out) / PDF quote.
 
 ## DLR-specific gotchas
 
@@ -112,9 +112,8 @@ Ask for dates + party first, then come back with the package questions.
 - "Set an availability alert? DLR cancellations happen often, especially 30–60 days out."
 
 **After a full package quote with tickets:**
-- "Want to try without the Lightning Lane (`genie-plus`) add-on to see the baseline?"
-- "Add a day — sometimes the per-day ticket rate drops meaningfully on longer tickets."
-- "Set a price-drop alert at today's exact price? You can override if you want a buffer."
+- Close with the THREE-WAY POST-MATRIX PROMPT from `room-genie-core`: "(a) price-drop alert on a room, (b) availability alert on any sold-out room (skip if everything is available), or (c) build a branded PDF quote for the client (calls `generate_quote_pdf` — gather inputs first)."
+- Don't pile on extra suggestions; that prompt is the canonical close.
 
 **After `list_room_types` at a DLR hotel:**
 - Surface the Standard View vs Premium View (or themed rooms like Pirates of the Caribbean at Disneyland Hotel) and explain the tradeoff in one line each.
