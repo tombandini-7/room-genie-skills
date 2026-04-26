@@ -13,20 +13,20 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 |---|---|
 | `list_resorts` | Find a hotel resort (WDW / DLR / Aulani) by name or browse all |
 | `list_room_types` | Get room UUIDs for a given resort — required before `create_alert` or `explore_rates` |
-| `list_cruise_sailings` | Search Disney Cruise Line sailings by month, ship, nights |
-| `list_stateroom_categories` | Get stateroom category codes for a specific sailing |
+| `cruise_search_sailings` | (DCL) Search Disney Cruise Line sailings by month, ship, nights — returns ports of call, dates, lowest fare. Step 1 of the cruise flow. |
+| `cruise_list_categories` | (DCL) After the user picks a sailing, render the FULL pricing view: cruise title, itinerary + ports + sea days, payment schedule (deposit-due rule per tier, final-payment date), sectioned tables (Interior / Oceanview / Oceanview with Verandah / Concierge) with deck/location/total/deposit/gratuities/grand-total. Pass `placeholder: true` to apply the Booking-a-Future-Cruise-Onboard discount (adds Savings column). This is the only DCL pricing tool — there is no separate "quote" step. Step 2 (and last) of the cruise flow. |
 | `get_my_profile` | Read the caller's notification settings (email, SMS-ready?) — use before `create_alert` to pick sensible `notificationMethod` default |
 | `list_alerts` | List the user's alerts (filterable by active/paused and hotel/cruise) |
 | `get_alert` | Fetch one alert with its most recent availability/pricing snapshot |
 | `create_alert` | Create a new availability or price-drop alert (hotel OR cruise). ONE per room — don't try to combine. |
 | `toggle_alert` | Pause or resume an alert |
 | `delete_alert` | Permanently delete an alert |
-| `explore_rates` | Query live rates: `mode: "availability" | "room-only" | "package"` |
+| `explore_rates` | Query live HOTEL rates: `mode: "availability" | "room-only" | "package"` (WDW / DLR / Aulani only). For cruises use `cruise_list_categories`. |
 | `show_price_matrix` | Render the full ticket + dining pricing grids from the cached last `explore_rates` package response. PRESENTATIONAL ONLY — no new scrape, no arguments needed. Call AFTER emitting the quote text to the user. |
 
 ## Golden rules
 
-1. **Always resolve IDs before pricing/creating.** Never pass a resort or room name as if it were an ID — call `list_resorts` / `list_room_types` (or `list_cruise_sailings` / `list_stateroom_categories` for DCL) first, then use the UUIDs you get back.
+1. **Always resolve IDs before pricing/creating.** Never pass a resort or room name as if it were an ID — call `list_resorts` / `list_room_types` (or `cruise_search_sailings` / `cruise_list_categories` for DCL) first, then use the IDs you get back.
 
 2. **Confirm before mutating.** `create_alert`, `toggle_alert`, `delete_alert` are destructive. For new alerts, recap the inputs (resort, dates, party, alert type) and ask the user to confirm before calling `create_alert`.
 
@@ -190,7 +190,7 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
 - Do NOT call external APIs (Disney, booking sites) via WebFetch — the MCP server handles all Disney/DCL interaction server-side.
 - Do NOT assume resort names map 1:1 to IDs — always look up.
-- Do NOT guess stateroom category codes (like "O9C") — call `list_stateroom_categories` for the specific sailing.
+- Do NOT guess stateroom category codes (like "O9C") — call `cruise_list_categories` for the specific sailing.
 - Do NOT fire `create_alert` without an explicit user confirmation.
 
 ## Suggest next steps after retrieving data
