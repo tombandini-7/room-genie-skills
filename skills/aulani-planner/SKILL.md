@@ -51,6 +51,8 @@ Aulani has ONLY ONE paid add-on — don't ask about tickets, dining, or Memory M
 
    **Do NOT invent multi-choice options** like "Package with airfare", "Package with airfare/protection", "Air + hotel", "Ground transport", or "Flights". **None of those exist at Aulani through Room Genie.** Aulani does not sell tickets, dining, Memory Maker, airfare, flights, or ground transport as package add-ons — only Travel Protection. If you present any of those as choices, the user will pick one and the alert will be wrong.
 
+   **The server REFUSES `explore_rates` for Aulani in mode="room-only" or "package" without an explicit `travelProtection` boolean.** Don't try to skip the question by setting `userConfirmedChoices: true` and omitting TP — the call will be rejected with the exact question to ask. Always ask, then pass `travelProtection: true` (yes) or `travelProtection: false` (no) on the call.
+
 ### If dates are missing
 
 Ask for dates + party first. Travel Protection is a short afterthought once dates land.
