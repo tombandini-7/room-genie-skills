@@ -70,6 +70,10 @@ DLR has fewer knobs than WDW. Ask dates FIRST, then package specifics.
 
 8. **Travel Protection?** — ask as a **separate** yes/no question. $99/adult, children free. Default no. This is the ONLY paid add-on to offer at DLR.
 
+### Travel Protection requires tickets
+
+DLR's Travel Protection is a PACKAGE add-on — Disney won't attach it without bundled tickets. If the user wants TP but no tickets ("just the room with insurance"), explain that DLR's TP is only sold as part of a ticketed package, and ask them to either (a) include tickets (set `ticketDays >= 1` and pick a ticket type), or (b) drop TP and run a `room-only` quote. The server will REFUSE a `mode="package"` call with `ticketDays = 0` and `travelProtection: true` — don't try to work around it.
+
 ### If dates are missing
 
 Ask for dates + party first, then come back with the package questions.

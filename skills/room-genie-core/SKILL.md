@@ -197,26 +197,32 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
     4. **Client-facing notes?** (optional, max 2000 chars) Free text printed on the terms page. Skip if not wanted.
 
-    5. **Add-on display toggles** — *the question set varies by destination*. Determine from the quote's `destinationName` and ONLY ask the toggles that destination actually offers. Never ask about an add-on the destination doesn't sell:
+    5. **Add-on display toggles** — ask only the questions the destination actually has an answer for. Three paths:
+       - **WDW / DLR package** (the user's `explore_rates` call ran with `mode: "package"` and the breakdown shows real ticket OR dining costs) → ask the per-destination toggles below.
+       - **Aulani** (any quote — TP is Aulani's only add-on) → ask one TP yes/no.
+       - **Room-only WDW / DLR** OR **Disney Cruise Line** → skip the question entirely. There's nothing to ask.
 
-       - **Walt Disney World** (Florida): ask all four —
-         a. Tickets comparison: off / upgrades / downgrades / both
-         b. Dining comparison: off / upgrades / downgrades / both
-         c. Include Memory Maker line: yes / no
-         d. Include Travel Protection line: yes / no
+       **For package quotes you MUST ask EVERY toggle in the destination's question set, one at a time.** Do NOT collapse them into a single "all good?" confirmation — that pattern has caused Claude to silently skip dining / Memory Maker / Travel Protection. Every question gets its own line, every question gets its own answer, and every answer is recorded in `addOnDisplay`. You may pre-suggest the recommended default in each prompt (e.g. *"Show ticket upgrade options? **(suggested: upgrades)** — off / upgrades / downgrades / both"*) — but the user has to actually answer each one, and Claude must wait for the answer before moving to the next question. A single "yes" without a question count covers ONE toggle only, the one most recently asked.
 
-       - **Disneyland Resort** (California): ask only —
-         a. Tickets comparison: off / upgrades / downgrades / both
-         b. Include Travel Protection line: yes / no
-         **NEVER** ask about Dining or Memory Maker — DLR doesn't sell them.
+       - **Walt Disney World package** (Florida, with tickets/dining) — ask all four, in this order:
+         a. Tickets comparison? *(suggested: upgrades)* — off / upgrades / downgrades / both
+         b. Dining comparison? *(suggested: upgrades)* — off / upgrades / downgrades / both
+         c. Include Memory Maker line? *(suggested: yes)* — yes / no
+         d. Include Travel Protection line? *(suggested: no)* — yes / no
+         Once all four are answered, summarize the chosen settings back ("Got it — tickets upgrades, dining upgrades, MM on, TP off; generating now…") and then call `generate_quote_pdf` with `userConfirmedAddOnDisplay: true` AND the matching `addOnDisplay` on the quote.
 
-       - **Aulani** (Hawaii): ask only —
-         a. Include Travel Protection line: yes / no
-         **NEVER** ask about Tickets, Dining, or Memory Maker — Aulani doesn't sell any of them.
+       - **Disneyland package** (California, with tickets) — ask both, in this order:
+         a. Tickets comparison? *(suggested: upgrades)* — off / upgrades / downgrades / both
+         b. Include Travel Protection line? *(suggested: no)* — yes / no
+         **NEVER** ask about Dining or Memory Maker — DLR doesn't sell them. After both answers, call with `userConfirmedAddOnDisplay: true`.
 
-       - **Disney Cruise Line** (cruise quote): SKIP this section entirely. Omit `addOnDisplay` from the payload.
+       - **Aulani** (Hawaii — any quote, room-only or otherwise) — ask the single Travel Protection question:
+         a. Include Travel Protection line? *(suggested: no)* — yes / no
+         Travel Protection is Aulani's only add-on. **NEVER** ask about tickets, dining, or Memory Maker — Aulani doesn't sell any of them. Set `addOnDisplay.travelProtection` to true/false based on the user's answer, then call with `userConfirmedAddOnDisplay: true`.
 
-       Pass the answers as the per-resort `addOnDisplay` config inside each resort block of the quote payload. Default to `'off'` / `false` for any toggle the user declines or that the destination doesn't sell.
+       - **Room-only WDW / DLR** OR **Disney Cruise Line**: SKIP this section entirely. Omit `addOnDisplay` AND `userConfirmedAddOnDisplay` from the payload — the PDF will render rooms only, no add-on tables. Don't ask anything about add-ons.
+
+       Pass the resolved answers as the top-level `addOnDisplay` on the quote payload. Any toggle the user explicitly declined → `'off'` / `false`. Any toggle the destination doesn't sell → `'off'` / `false`. **Never silently apply the suggested default without an actual user answer** — defaults are recommendations, not assumptions. The server REFUSES package PDF calls that omit `userConfirmedAddOnDisplay: true`, returning the question list — same pattern as `explore_rates`'s `userConfirmedChoices` guard.
 
     6. **Pass the full `quote` payload** from the most recent `explore_rates` (hotel) or `cruise_list_categories` (cruise) `structuredContent`, with the user's `addOnDisplay` choices merged in per resort. Then call `generate_quote_pdf` ONCE with `{ quote, roomIds, quoteName?, clientName?, notes? }`.
 

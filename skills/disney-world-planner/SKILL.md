@@ -101,6 +101,10 @@ The year of the check-in date determines which dining plans Disney sells, so dat
 
 Do NOT bundle Memory Maker and Travel Protection into the same question — they're distinct products with different pricing, and users decide on them separately.
 
+### Add-ons require tickets
+
+Dining plans, Memory Maker, and Travel Protection are PACKAGE add-ons at WDW — Disney won't attach any of them without bundled tickets. If the user says they want, e.g., "no tickets but include Memory Maker", explain that the Memory Maker / dining plan / Travel Protection lines are sold only as part of a ticketed package, and ask them to either (a) include tickets (set `ticketDays >= 1` and pick a ticket type), or (b) drop the add-on(s) and run a `room-only` quote. The server will REFUSE a `mode="package"` call with `ticketDays = 0` plus any of those flags set — don't try to work around it.
+
 ### If dates are missing, do NOT ask packaging questions yet
 
 If the user asks for pricing without giving check-in dates, get dates (and party) first. Saying "I'll need dates and party first to know which dining plans are offered that year" is fine. Once dates land, come back with the year-appropriate questionnaire.
