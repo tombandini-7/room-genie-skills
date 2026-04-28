@@ -61,28 +61,6 @@ To revoke access later, visit [Connected Apps](https://app.roomgenie.travel/sett
 - "Alert me if the Disney Wish 4-nighter in Sep 2026 drops below $3200"
 - "Pause my alert for Aulani"
 
-## Local development
-
-If you're working against a local Room Genie dev server (not the hosted one), point the same `room-genie` registration at localhost:
-
-```bash
-claude mcp remove room-genie  # if you previously registered the hosted URL
-claude mcp add --transport http room-genie http://localhost:3000/api/mcp
-```
-
-Or in Claude Desktop's `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "room-genie": {
-      "type": "http",
-      "url": "http://localhost:3000/api/mcp"
-    }
-  }
-}
-```
-
 ## Requirements
 
 - A Room Genie account (sign up at https://roomgenie.travel)
