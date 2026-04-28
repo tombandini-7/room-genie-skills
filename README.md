@@ -10,7 +10,7 @@ Bundles 5 skills:
 - **aulani-planner** — Aulani (Hawaii)
 - **disney-cruise-planner** — Disney Cruise Line sailings + staterooms
 
-The MCP server itself lives at `https://app.roomgenie.travel/api/mcp` and is registered separately (see below) because Claude Code's plugin format only supports stdio MCP servers today — not remote HTTP.
+The MCP server itself lives at `https://app.roomgenie.travel/api/mcp` and is registered separately (see below) — Claude Code's plugin format bundles the skills, but the MCP server connection is configured by you.
 
 ## Install (Claude Code)
 
@@ -18,7 +18,7 @@ Two steps — register the server, then install the skills:
 
 ```bash
 # 1. Register the hosted MCP server (one-time). Opens a browser for Supabase OAuth on first tool call.
-claude mcp add --transport streamable-http room-genie https://app.roomgenie.travel/api/mcp
+claude mcp add --transport http room-genie https://app.roomgenie.travel/api/mcp
 
 # 2. Add the marketplace + install the skills plugin
 /plugin marketplace add tombandini-7/room-genie-skills
@@ -38,7 +38,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "room-genie": {
-      "type": "streamable-http",
+      "type": "http",
       "url": "https://app.roomgenie.travel/api/mcp"
     }
   }
@@ -63,7 +63,25 @@ To revoke access later, visit [Connected Apps](https://app.roomgenie.travel/sett
 
 ## Local development
 
-If you're working against a local Room Genie dev server (not the hosted one), edit `.claude-plugin/plugin.json` and change the `url` field to `http://localhost:3000/api/mcp`.
+If you're working against a local Room Genie dev server (not the hosted one), point the same `room-genie` registration at localhost:
+
+```bash
+claude mcp remove room-genie  # if you previously registered the hosted URL
+claude mcp add --transport http room-genie http://localhost:3000/api/mcp
+```
+
+Or in Claude Desktop's `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "room-genie": {
+      "type": "http",
+      "url": "http://localhost:3000/api/mcp"
+    }
+  }
+}
+```
 
 ## Requirements
 
