@@ -124,16 +124,38 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
     Only re-call `explore_rates` when the **resort**, **dates**, **party**, or **mode** (room-only vs package) changes.
 
-13. **ALL ROOM QUOTES FIRST, THEN ONE `show_price_matrix` call at the END.** `explore_rates` returns the room quote(s). The full ticket pricing grid, the dining plan deltas, and the Memory Maker / Travel Protection add-on lines come from a separate tool called `show_price_matrix`, which reads the most recent explore_rates package response from a per-user server-side cache (10-min TTL). Do NOT batch-call both tools before writing any text — that pattern causes Claude to summarize the matrices as prose. Call `explore_rates` ONCE with ALL requested rooms in `roomTypes` (it prices every room in one scrape), emit every room's quote to the user FIRST, then call `show_price_matrix` with no arguments EXACTLY ONCE at the end. Do NOT try to pass `addOnOptions` — it lives in `structuredContent`, which is not visible to you. Do NOT call show_price_matrix per room — the matrix is identical across all rooms at the same resort+dates+party. Always call it before ending your turn; don't wait for the user to ask. The matrix is how the user sees what they're declining — especially the dining deltas when they picked "None".
+13. **ALL ROOM QUOTES FIRST, THEN ONE `show_price_matrix` call at the END.** `explore_rates` returns the room quote(s). The full ticket pricing grid, the dining plan deltas, and the Memory Maker / Travel Protection add-on lines come from a separate tool called `show_price_matrix`, which reads the most recent explore_rates package response from a per-user server-side cache (15-min TTL). Do NOT batch-call both tools before writing any text — that pattern causes Claude to summarize the matrices as prose AND surfaces the matrix before the per-room prices the user wants to read first. Call `explore_rates` ONCE with ALL requested rooms in `roomTypes` (it prices every room in one scrape), **emit every room's quote text to the chat FIRST as a real assistant text turn so the user sees the prices on screen**, THEN call `show_price_matrix` with no arguments EXACTLY ONCE, then paste its output as a continuation. Do NOT try to pass `addOnOptions` — it lives in `structuredContent`, which is not visible to you. Do NOT call show_price_matrix per room — the matrix is identical across all rooms at the same resort+dates+party. Always call it before ending your turn; don't wait for the user to ask.
+
+    **STRICT ORDERING — interleave tool calls with assistant text:**
+
+    ❌ **WRONG ORDER** (one combined turn — user sees the matrix at the same time as or before the prices):
+    ```
+    [tool] explore_rates(...)
+    [tool] show_price_matrix()
+    [assistant text] "Here are the rooms and the matrix..."
+    ```
+
+    ✅ **CORRECT ORDER** (two assistant text emissions, one between each tool call):
+    ```
+    [tool] explore_rates(...)
+    [assistant text] full per-room quote text — every room's breakdown table, deposit, offer
+    [tool] show_price_matrix()
+    [assistant text] paste matrix blocks verbatim as a continuation
+    ```
 
     The flow after a successful hotel package explore_rates:
 
     ```
     1. Call explore_rates ONCE with every room the user wants in roomTypes.
-    2. Emit EVERY room's quote text to the user as your reply (breakdown table, deposit, offer, per room).
-    3. THEN call show_price_matrix()  — NO arguments, ONCE for the whole reply.
-    4. Paste every block from show_price_matrix's response verbatim as the final section.
-    5. Close the reply with the THREE-WAY POST-MATRIX PROMPT (see next section). This is mandatory, not optional.
+    2. EMIT every room's quote text (breakdown table, deposit, offer, per room) as a
+       real assistant text turn. Stop and let the user see the prices render before
+       the next tool fires. This is not optional and not a batch step — it is its
+       own visible message.
+    3. THEN call show_price_matrix() — NO arguments, ONCE for the whole reply.
+    4. Paste every block from show_price_matrix's response verbatim as a continuation
+       of the same reply.
+    5. Close the reply with the THREE-WAY POST-MATRIX PROMPT (see next section). This
+       is mandatory, not optional.
     ```
 
     **MULTI-RESORT COMPARISON (same dates + party):** The ticket/dining matrix depends on dates + party + check-in year — NOT on the resort. So a "compare Polynesian vs Grand Floridian vs Beach Club for Dec 1–5, 2 adults, 4-day Park Hopper" trip needs ONE matrix at the end, not three. The flow:
@@ -144,12 +166,15 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
        25–30s scrape per resort, but the matrix cache is overwritten last-write-wins
        per user — that's fine because every call at the same dates+party would
        populate the same matrix anyway.
-    2. Emit EVERY resort's quotes to the user as one combined reply, grouped by resort
-       with clear headings (cheapest first is usually clearest).
+    2. EMIT every resort's quotes as a real assistant text turn, grouped by resort
+       with clear headings (cheapest first is usually clearest). The user must see
+       all the per-room prices RENDERED ON SCREEN before the matrix call fires —
+       calling show_price_matrix immediately after the last explore_rates without
+       this text emission is the WRONG ORDER above.
     3. THEN call show_price_matrix() exactly ONCE — it reads the cache from the LAST
        explore_rates call, but that's OK because the matrix is identical across all
        resorts in this comparison.
-    4. Paste the matrix blocks verbatim as the final section.
+    4. Paste the matrix blocks verbatim as a continuation of the same reply.
     5. Three-way post-matrix prompt.
     ```
 
@@ -178,7 +203,12 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
     - The resort is Aulani (no tickets/dining/MM)
     - The call was for a cruise (sailingId)
 
-    When show_price_matrix's content does arrive, paste it unchanged. Do NOT:
+    `show_price_matrix` returns **markdown pipe tables** (`| col | col |` rows with a `| --- |` separator). When its content does arrive, paste each row through unchanged — every `|`, every header, every separator row, every cell. The user's renderer (Claude Code, Claude Desktop, web) only draws a styled grid when the pipe-table source survives. Do NOT:
+    - convert the pipe tables into fenced code blocks (` ``` … ``` `) — that prevents table rendering and produces the space-aligned ASCII you've seen go wrong
+    - realign cells with spaces or tab stops (breaks the markdown parser)
+    - rewrite column headers or labels (e.g. don't change "1 Park Per Day" to "1 Park/Day", or "Waterpark & Sports" to "+Water Parks")
+    - replace the `current` cell or `← current` row marker with "(selected)" inline
+    - swap signed deltas (`+$320.42`) for absolute prices
     - summarize ("here are a couple highlights…")
     - cherry-pick two rows and drop the rest
     - paraphrase cells into prose bullets ("Park Hopper would be +$223…")
@@ -186,6 +216,15 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
     - omit the preamble/postamble or the header rows
 
     The grids exist so the user can scan the full matrix at once — especially the dining deltas, which are the whole reason the user needs to see the matrix after declining dining.
+
+**14a. DO NOT RE-RUN `explore_rates` BEFORE `generate_quote_pdf`.** When the user picks option (c) and you've already run `explore_rates` earlier in this same conversation for the same resort+dates+party, **call `generate_quote_pdf` directly with the cached payload** — do NOT re-scrape. The server keeps a per-resort cache (15-min TTL) populated by every successful `explore_rates` call, and `generate_quote_pdf` reads from it automatically: `addOnOptions`, `breakdown`, `paymentDates`, and `offerDetails` are all hydrated server-side before render. Re-running `explore_rates` costs the user 30s of wall time and a paid scrape per resort for data that's already in the cache.
+
+The ONLY times to re-run `explore_rates` after the user asks for a PDF:
+- The server returns `missing_addon_data` — and even then, re-run **only the resort(s) named in the error message**, not every resort.
+- The 15-min cache TTL has demonstrably expired (the user spent >15 minutes between the original quote and the PDF request).
+- The user explicitly changed dates, party composition, or rooms since the original quote.
+
+If you are tempted to "refresh" because you think the data might be stale, or because you "lost" the `structuredContent` payload (you cannot see `structuredContent` — that's expected and correct), STOP. The server-side cache is the source of truth; trust it.
 
 14. **PDF QUOTE FLOW — gather inputs conversationally before calling `generate_quote_pdf`.** When the user picks option (c) from the three-way post-matrix prompt, do NOT call `generate_quote_pdf` immediately with placeholder data. Walk the user through the same questions the in-app `/explore-rates` Quote dialog asks. Ask each in order; never skip:
 
@@ -222,7 +261,11 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
        - **Room-only WDW / DLR** OR **Disney Cruise Line**: SKIP this section entirely. Omit `addOnDisplay` AND `userConfirmedAddOnDisplay` from the payload — the PDF will render rooms only, no add-on tables. Don't ask anything about add-ons.
 
-       Pass the resolved answers as the top-level `addOnDisplay` on the quote payload. Any toggle the user explicitly declined → `'off'` / `false`. Any toggle the destination doesn't sell → `'off'` / `false`. **Never silently apply the suggested default without an actual user answer** — defaults are recommendations, not assumptions. The server REFUSES package PDF calls that omit `userConfirmedAddOnDisplay: true`, returning the question list — same pattern as `explore_rates`'s `userConfirmedChoices` guard.
+       Pass the resolved answers as the top-level `addOnDisplay` on the quote payload. Any toggle the user explicitly declined → `'off'` / `false`. Any toggle the destination doesn't sell → `'off'` / `false`. **Never silently apply the suggested default without an actual user answer** — defaults are recommendations, not assumptions.
+
+       The server enforces this on TWO levels. Both have to pass:
+       1. `userConfirmedAddOnDisplay: true` AND `addOnDisplay` must be present with every key the destination's question set requires (WDW = tickets/dining/memoryMaker/travelProtection; DLR = tickets/travelProtection; Aulani = travelProtection). The boolean alone is no longer sufficient — the field carries the user's actual answers, the boolean confirms you asked. If you set the boolean without the field (or with missing keys), the server refuses with the question list and tells you exactly which keys are missing.
+       2. If `addOnDisplay` opts a section in (`tickets: 'upgrades'`, `memoryMaker: true`, etc.) but the per-resort `addOnOptions` cache is empty for this resort+dates+party (the explore_rates 15-min cache expired or was never populated), the server refuses with the new `missing_addon_data` error. Recovery: re-run `explore_rates` with `mode="package"` for the same parameters to repopulate the cache, then retry `generate_quote_pdf` with the same payload.
 
     6. **Pass the full `quote` payload** from the most recent `explore_rates` (hotel) or `cruise_list_categories` (cruise) `structuredContent`, with the user's `addOnDisplay` choices merged in per resort. Then call `generate_quote_pdf` ONCE with `{ quote, roomIds, quoteName?, clientName?, notes? }`.
 

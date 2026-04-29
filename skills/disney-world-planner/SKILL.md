@@ -146,26 +146,25 @@ If you find yourself thinking "the cents are noise," they're not — users compa
 
 ### Per-room itemized breakdown (mirrors the web UI)
 
-For each available room, the tool emits a fenced code block with the items the user opted into (room, tickets, dining, MM, TP) and a Grand Total. Example:
+For each available room, the tool emits a **markdown pipe table** (`| Item | Amount |` rows with a `| --- | ---: |` separator) with the items the user opted into (room, tickets, dining, MM, TP) and a Grand Total. Example shape (the tool's actual output — paste it through unchanged):
 
-```
+```markdown
 ### Family Suites
 _Suites_
 
-```
-Room (6 nights)              $4,172.37
-4-Day 1 Park Per Day         $3,861.32
-Table-Service Dining Plan    $1,773.30
-─────────────────────────────────────
-Grand Total                  $9,806.99
-```
+| Item | Amount |
+| --- | ---: |
+| Room (6 nights) | \$4,172.37 |
+| 4-Day 1 Park Per Day | \$3,861.32 |
+| Table-Service Dining Plan | \$1,773.30 |
+| **Grand Total** | **\$9,806.99** |
 
-**Deposit:** $200.00 due Apr 21, 2026     **Balance:** $9,606.99 due Jan 15, 2027
+**Deposit:** \$200.00 due Apr 21, 2026     **Balance:** \$9,606.99 due Jan 15, 2027
 
 Offer: **Standard Price**
 ```
 
-Render this verbatim. Each line is one component the user selected — render every line, don't combine, don't summarize. The Grand Total at the bottom must equal the sum of the line items (and that's what the user verifies against Disney's checkout).
+Render this verbatim — every `|`, every header, every separator row. Do **NOT** convert it into a fenced code block (` ``` `), do NOT realign cells with spaces or tabs, do NOT collapse it to bullets. The user's renderer (Claude Code, Claude Desktop, web) only draws a styled table when the pipe-table source survives. Each row is one component the user selected — render every row, don't combine, don't summarize. The Grand Total at the bottom must equal the sum of the line items (and that's what the user verifies against Disney's checkout).
 
 ### Only show what the user opted into
 
@@ -173,7 +172,7 @@ The tool already filters: if the user said no Memory Maker, no MM line appears. 
 
 ### One `explore_rates` call already priced every alternative — use `show_price_matrix`, don't re-call
 
-Disney's cart flow (the thing that takes 25–30 seconds per room) returns **every** ticket type, **every** day count, and **every** dining plan in the same response. The MCP server caches that payload for 10 minutes so a companion tool, `show_price_matrix`, can render it as two markdown tables on demand:
+Disney's cart flow (the thing that takes 25–30 seconds per room) returns **every** ticket type, **every** day count, and **every** dining plan in the same response. The MCP server caches that payload for 15 minutes so a companion tool, `show_price_matrix`, can render it as two markdown tables on demand:
 
 - The full **day × ticket-type admission grid** (every day count 2–10, crossed with every ticket type, with exact admission totals).
 - The full **dining-plan table** — every plan's total and "Δ vs current" cost relative to the user's pick.
@@ -193,7 +192,7 @@ When the user asks a follow-up like:
 - "How much is Memory Maker?"
 - **"Give me dining plan options as the incremental cost"** / "show me dining upsells" / "what's each dining plan add?"
 
-**Read from the `show_price_matrix` output you already pasted. Do NOT call `explore_rates` again.** Re-calling launches a fresh 25–30s cart flow for data already on screen. That's the single biggest perf regression Claude can cause in this app. If the matrix is stale (more than 10 minutes since the last explore_rates call, or the user changed dates/party/rooms), you'll need a fresh `explore_rates` — `show_price_matrix` will say "no recent quote" and you should start over from step 1.
+**Read from the `show_price_matrix` output you already pasted. Do NOT call `explore_rates` again.** Re-calling launches a fresh 25–30s cart flow for data already on screen. That's the single biggest perf regression Claude can cause in this app. If the matrix is stale (more than 15 minutes since the last explore_rates call, or the user changed dates/party/rooms), you'll need a fresh `explore_rates` — `show_price_matrix` will say "no recent quote" and you should start over from step 1.
 
 ### Dining upsell — the canonical case
 
