@@ -178,7 +178,12 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
     - The resort is Aulani (no tickets/dining/MM)
     - The call was for a cruise (sailingId)
 
-    When show_price_matrix's content does arrive, paste it unchanged. Do NOT:
+    `show_price_matrix` returns **markdown pipe tables** (`| col | col |` rows with a `| --- |` separator). When its content does arrive, paste each row through unchanged — every `|`, every header, every separator row, every cell. The user's renderer (Claude Code, Claude Desktop, web) only draws a styled grid when the pipe-table source survives. Do NOT:
+    - convert the pipe tables into fenced code blocks (` ``` … ``` `) — that prevents table rendering and produces the space-aligned ASCII you've seen go wrong
+    - realign cells with spaces or tab stops (breaks the markdown parser)
+    - rewrite column headers or labels (e.g. don't change "1 Park Per Day" to "1 Park/Day", or "Waterpark & Sports" to "+Water Parks")
+    - replace the `current` cell or `← current` row marker with "(selected)" inline
+    - swap signed deltas (`+$320.42`) for absolute prices
     - summarize ("here are a couple highlights…")
     - cherry-pick two rows and drop the rest
     - paraphrase cells into prose bullets ("Park Hopper would be +$223…")
@@ -222,7 +227,11 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
        - **Room-only WDW / DLR** OR **Disney Cruise Line**: SKIP this section entirely. Omit `addOnDisplay` AND `userConfirmedAddOnDisplay` from the payload — the PDF will render rooms only, no add-on tables. Don't ask anything about add-ons.
 
-       Pass the resolved answers as the top-level `addOnDisplay` on the quote payload. Any toggle the user explicitly declined → `'off'` / `false`. Any toggle the destination doesn't sell → `'off'` / `false`. **Never silently apply the suggested default without an actual user answer** — defaults are recommendations, not assumptions. The server REFUSES package PDF calls that omit `userConfirmedAddOnDisplay: true`, returning the question list — same pattern as `explore_rates`'s `userConfirmedChoices` guard.
+       Pass the resolved answers as the top-level `addOnDisplay` on the quote payload. Any toggle the user explicitly declined → `'off'` / `false`. Any toggle the destination doesn't sell → `'off'` / `false`. **Never silently apply the suggested default without an actual user answer** — defaults are recommendations, not assumptions.
+
+       The server enforces this on TWO levels. Both have to pass:
+       1. `userConfirmedAddOnDisplay: true` AND `addOnDisplay` must be present with every key the destination's question set requires (WDW = tickets/dining/memoryMaker/travelProtection; DLR = tickets/travelProtection; Aulani = travelProtection). The boolean alone is no longer sufficient — the field carries the user's actual answers, the boolean confirms you asked. If you set the boolean without the field (or with missing keys), the server refuses with the question list and tells you exactly which keys are missing.
+       2. If `addOnDisplay` opts a section in (`tickets: 'upgrades'`, `memoryMaker: true`, etc.) but the per-resort `addOnOptions` cache is empty for this resort+dates+party (the explore_rates 10-min cache expired or was never populated), the server refuses with the new `missing_addon_data` error. Recovery: re-run `explore_rates` with `mode="package"` for the same parameters to repopulate the cache, then retry `generate_quote_pdf` with the same payload.
 
     6. **Pass the full `quote` payload** from the most recent `explore_rates` (hotel) or `cruise_list_categories` (cruise) `structuredContent`, with the user's `addOnDisplay` choices merged in per resort. Then call `generate_quote_pdf` ONCE with `{ quote, roomIds, quoteName?, clientName?, notes? }`.
 

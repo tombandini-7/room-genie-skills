@@ -146,26 +146,25 @@ If you find yourself thinking "the cents are noise," they're not — users compa
 
 ### Per-room itemized breakdown (mirrors the web UI)
 
-For each available room, the tool emits a fenced code block with the items the user opted into (room, tickets, dining, MM, TP) and a Grand Total. Example:
+For each available room, the tool emits a **markdown pipe table** (`| Item | Amount |` rows with a `| --- | ---: |` separator) with the items the user opted into (room, tickets, dining, MM, TP) and a Grand Total. Example shape (the tool's actual output — paste it through unchanged):
 
-```
+```markdown
 ### Family Suites
 _Suites_
 
-```
-Room (6 nights)              $4,172.37
-4-Day 1 Park Per Day         $3,861.32
-Table-Service Dining Plan    $1,773.30
-─────────────────────────────────────
-Grand Total                  $9,806.99
-```
+| Item | Amount |
+| --- | ---: |
+| Room (6 nights) | \$4,172.37 |
+| 4-Day 1 Park Per Day | \$3,861.32 |
+| Table-Service Dining Plan | \$1,773.30 |
+| **Grand Total** | **\$9,806.99** |
 
-**Deposit:** $200.00 due Apr 21, 2026     **Balance:** $9,606.99 due Jan 15, 2027
+**Deposit:** \$200.00 due Apr 21, 2026     **Balance:** \$9,606.99 due Jan 15, 2027
 
 Offer: **Standard Price**
 ```
 
-Render this verbatim. Each line is one component the user selected — render every line, don't combine, don't summarize. The Grand Total at the bottom must equal the sum of the line items (and that's what the user verifies against Disney's checkout).
+Render this verbatim — every `|`, every header, every separator row. Do **NOT** convert it into a fenced code block (` ``` `), do NOT realign cells with spaces or tabs, do NOT collapse it to bullets. The user's renderer (Claude Code, Claude Desktop, web) only draws a styled table when the pipe-table source survives. Each row is one component the user selected — render every row, don't combine, don't summarize. The Grand Total at the bottom must equal the sum of the line items (and that's what the user verifies against Disney's checkout).
 
 ### Only show what the user opted into
 
