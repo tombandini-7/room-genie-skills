@@ -124,16 +124,38 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 
     Only re-call `explore_rates` when the **resort**, **dates**, **party**, or **mode** (room-only vs package) changes.
 
-13. **ALL ROOM QUOTES FIRST, THEN ONE `show_price_matrix` call at the END.** `explore_rates` returns the room quote(s). The full ticket pricing grid, the dining plan deltas, and the Memory Maker / Travel Protection add-on lines come from a separate tool called `show_price_matrix`, which reads the most recent explore_rates package response from a per-user server-side cache (10-min TTL). Do NOT batch-call both tools before writing any text — that pattern causes Claude to summarize the matrices as prose. Call `explore_rates` ONCE with ALL requested rooms in `roomTypes` (it prices every room in one scrape), emit every room's quote to the user FIRST, then call `show_price_matrix` with no arguments EXACTLY ONCE at the end. Do NOT try to pass `addOnOptions` — it lives in `structuredContent`, which is not visible to you. Do NOT call show_price_matrix per room — the matrix is identical across all rooms at the same resort+dates+party. Always call it before ending your turn; don't wait for the user to ask. The matrix is how the user sees what they're declining — especially the dining deltas when they picked "None".
+13. **ALL ROOM QUOTES FIRST, THEN ONE `show_price_matrix` call at the END.** `explore_rates` returns the room quote(s). The full ticket pricing grid, the dining plan deltas, and the Memory Maker / Travel Protection add-on lines come from a separate tool called `show_price_matrix`, which reads the most recent explore_rates package response from a per-user server-side cache (10-min TTL). Do NOT batch-call both tools before writing any text — that pattern causes Claude to summarize the matrices as prose AND surfaces the matrix before the per-room prices the user wants to read first. Call `explore_rates` ONCE with ALL requested rooms in `roomTypes` (it prices every room in one scrape), **emit every room's quote text to the chat FIRST as a real assistant text turn so the user sees the prices on screen**, THEN call `show_price_matrix` with no arguments EXACTLY ONCE, then paste its output as a continuation. Do NOT try to pass `addOnOptions` — it lives in `structuredContent`, which is not visible to you. Do NOT call show_price_matrix per room — the matrix is identical across all rooms at the same resort+dates+party. Always call it before ending your turn; don't wait for the user to ask.
+
+    **STRICT ORDERING — interleave tool calls with assistant text:**
+
+    ❌ **WRONG ORDER** (one combined turn — user sees the matrix at the same time as or before the prices):
+    ```
+    [tool] explore_rates(...)
+    [tool] show_price_matrix()
+    [assistant text] "Here are the rooms and the matrix..."
+    ```
+
+    ✅ **CORRECT ORDER** (two assistant text emissions, one between each tool call):
+    ```
+    [tool] explore_rates(...)
+    [assistant text] full per-room quote text — every room's breakdown table, deposit, offer
+    [tool] show_price_matrix()
+    [assistant text] paste matrix blocks verbatim as a continuation
+    ```
 
     The flow after a successful hotel package explore_rates:
 
     ```
     1. Call explore_rates ONCE with every room the user wants in roomTypes.
-    2. Emit EVERY room's quote text to the user as your reply (breakdown table, deposit, offer, per room).
-    3. THEN call show_price_matrix()  — NO arguments, ONCE for the whole reply.
-    4. Paste every block from show_price_matrix's response verbatim as the final section.
-    5. Close the reply with the THREE-WAY POST-MATRIX PROMPT (see next section). This is mandatory, not optional.
+    2. EMIT every room's quote text (breakdown table, deposit, offer, per room) as a
+       real assistant text turn. Stop and let the user see the prices render before
+       the next tool fires. This is not optional and not a batch step — it is its
+       own visible message.
+    3. THEN call show_price_matrix() — NO arguments, ONCE for the whole reply.
+    4. Paste every block from show_price_matrix's response verbatim as a continuation
+       of the same reply.
+    5. Close the reply with the THREE-WAY POST-MATRIX PROMPT (see next section). This
+       is mandatory, not optional.
     ```
 
     **MULTI-RESORT COMPARISON (same dates + party):** The ticket/dining matrix depends on dates + party + check-in year — NOT on the resort. So a "compare Polynesian vs Grand Floridian vs Beach Club for Dec 1–5, 2 adults, 4-day Park Hopper" trip needs ONE matrix at the end, not three. The flow:
@@ -144,12 +166,15 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
        25–30s scrape per resort, but the matrix cache is overwritten last-write-wins
        per user — that's fine because every call at the same dates+party would
        populate the same matrix anyway.
-    2. Emit EVERY resort's quotes to the user as one combined reply, grouped by resort
-       with clear headings (cheapest first is usually clearest).
+    2. EMIT every resort's quotes as a real assistant text turn, grouped by resort
+       with clear headings (cheapest first is usually clearest). The user must see
+       all the per-room prices RENDERED ON SCREEN before the matrix call fires —
+       calling show_price_matrix immediately after the last explore_rates without
+       this text emission is the WRONG ORDER above.
     3. THEN call show_price_matrix() exactly ONCE — it reads the cache from the LAST
        explore_rates call, but that's OK because the matrix is identical across all
        resorts in this comparison.
-    4. Paste the matrix blocks verbatim as the final section.
+    4. Paste the matrix blocks verbatim as a continuation of the same reply.
     5. Three-way post-matrix prompt.
     ```
 
