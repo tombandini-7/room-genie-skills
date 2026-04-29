@@ -172,7 +172,7 @@ The tool already filters: if the user said no Memory Maker, no MM line appears. 
 
 ### One `explore_rates` call already priced every alternative — use `show_price_matrix`, don't re-call
 
-Disney's cart flow (the thing that takes 25–30 seconds per room) returns **every** ticket type, **every** day count, and **every** dining plan in the same response. The MCP server caches that payload for 10 minutes so a companion tool, `show_price_matrix`, can render it as two markdown tables on demand:
+Disney's cart flow (the thing that takes 25–30 seconds per room) returns **every** ticket type, **every** day count, and **every** dining plan in the same response. The MCP server caches that payload for 15 minutes so a companion tool, `show_price_matrix`, can render it as two markdown tables on demand:
 
 - The full **day × ticket-type admission grid** (every day count 2–10, crossed with every ticket type, with exact admission totals).
 - The full **dining-plan table** — every plan's total and "Δ vs current" cost relative to the user's pick.
@@ -192,7 +192,7 @@ When the user asks a follow-up like:
 - "How much is Memory Maker?"
 - **"Give me dining plan options as the incremental cost"** / "show me dining upsells" / "what's each dining plan add?"
 
-**Read from the `show_price_matrix` output you already pasted. Do NOT call `explore_rates` again.** Re-calling launches a fresh 25–30s cart flow for data already on screen. That's the single biggest perf regression Claude can cause in this app. If the matrix is stale (more than 10 minutes since the last explore_rates call, or the user changed dates/party/rooms), you'll need a fresh `explore_rates` — `show_price_matrix` will say "no recent quote" and you should start over from step 1.
+**Read from the `show_price_matrix` output you already pasted. Do NOT call `explore_rates` again.** Re-calling launches a fresh 25–30s cart flow for data already on screen. That's the single biggest perf regression Claude can cause in this app. If the matrix is stale (more than 15 minutes since the last explore_rates call, or the user changed dates/party/rooms), you'll need a fresh `explore_rates` — `show_price_matrix` will say "no recent quote" and you should start over from step 1.
 
 ### Dining upsell — the canonical case
 
