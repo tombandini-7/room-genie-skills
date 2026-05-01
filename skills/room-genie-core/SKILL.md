@@ -269,6 +269,23 @@ If you are tempted to "refresh" because you think the data might be stale, or be
 
     6. **Pass the full `quote` payload** from the most recent `explore_rates` (hotel) or `cruise_list_categories` (cruise) `structuredContent`, with the user's `addOnDisplay` choices merged in per resort. Then call `generate_quote_pdf` ONCE with `{ quote, roomIds, quoteName?, clientName?, notes? }`.
 
+    **MULTI-RESORT PDFs — ONE PDF, NOT N.** When the user is comparing multiple resorts (e.g. "Beach Club vs BoardWalk Inn", "Polynesian vs Grand Floridian vs Contemporary") and asks for a PDF, generate **ONE PDF that contains every resort in a single `resorts` array** — NOT one PDF per resort. The hotel quote schema's `resorts` field is an array (`min(1)`) for exactly this reason: clients want a single side-by-side comparison document, not N separate attachments.
+
+    The per-resort cache is keyed `(userId, resortId)` with a 15-min TTL — it holds an entry for **every** resort you priced via `explore_rates` in the current conversation. Pricing Beach Club and then BoardWalk does **NOT** evict Beach Club; both snapshots coexist in cache simultaneously. So a single `generate_quote_pdf` call with `resorts: [beachClubBlock, boardWalkBlock, ...]` will hydrate addOnOptions / breakdown / paymentDates / offerDetails for every resort from the cache, with zero re-priming.
+
+    DO NOT:
+    - Make one `generate_quote_pdf` call per resort.
+    - Tell the user "Room Genie generates one PDF per resort" — that statement is **false**.
+    - Re-run `explore_rates` between PDF calls because you think the previous resort's cache was wiped — it wasn't. The cache key is per-resort, not "most recent".
+
+    DO:
+    - Build `resorts: [...]` with one block per resort, each carrying its own `resortId`, `resortName`, and `rooms[]` (the rooms the user picked from THAT resort).
+    - Pass `roomIds` as the union of all room IDs across resorts the user wants in the PDF.
+    - Apply the SAME `addOnDisplay` to the whole comparison — ask the toggle questions ONCE.
+    - Call `generate_quote_pdf` exactly **ONCE**.
+
+    If the server returns `missing_addon_data`, the error names exactly which resort(s) need a re-prime. Re-run `explore_rates` for ONLY those resorts, then retry the **same single** `generate_quote_pdf` call. Do not generalize one missing resort into "the cache must be wiped, re-prime everything".
+
     The tool returns a markdown link to the signed PDF (7-day expiry) plus `structuredContent` with `{ url, expiresAt, sizeBytes, productType, cacheHit, droppedRoomIds }`. Identical payloads dedupe — re-running with the same selection serves the cached PDF instantly.
 
     **Auto-save**: every MCP-generated PDF is automatically saved to the user's `/quotes` page. When you reply to the user with the download link, also tell them: *"I've saved this to your Quotes page — you can pull it back any time and I'll regenerate the link."* Don't ask "do you want me to save this?" — that's already handled.
