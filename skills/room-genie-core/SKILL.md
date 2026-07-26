@@ -1,6 +1,6 @@
 ---
 name: room-genie-core
-description: Use this skill EVERY TIME you are about to call any `mcp__room-genie-dev__*` or `mcp__room-genie__*` tool (list_alerts, get_alert, create_alert, toggle_alert, delete_alert, list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, get_my_profile, explore_rates, show_price_matrix, generate_quote_pdf, list_quote_pdfs). Covers the required ordering of tool calls, confirmation rules before mutations, the post-result presentation format (per-room blocks with total/deposit/balance/due dates, multi-room combined totals), the THREE-WAY POST-MATRIX PROMPT (price-drop alert / availability alert / PDF quote), the alert-offering flow (one alert per room, exact-price threshold suggestion, `get_my_profile` for notification defaults, availability alert for sold-out rooms), and the PDF quote flow (per-destination add-on toggles before calling generate_quote_pdf). Applies across all four Room Genie products (WDW, DLR, Aulani, DCL). Also the right skill when the user mentions "Room Genie", "my alerts", "watch this price", "availability alert", "price drop alert", or "PDF quote".
+description: Use this skill EVERY TIME you are about to call any `mcp__room-genie-dev__*` or `mcp__room-genie__*` tool (list_alerts, get_alert, create_alert, toggle_alert, delete_alert, list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, get_my_profile, build_quote, explore_rates, show_price_matrix, generate_quote_pdf, list_quote_pdfs). Covers the interactive quote-builder form (`build_quote`) that should open hotel quotes instead of the chat questionnaire, and the handoff message it sends back. Covers the required ordering of tool calls, confirmation rules before mutations, the post-result presentation format (per-room blocks with total/deposit/balance/due dates, multi-room combined totals), the THREE-WAY POST-MATRIX PROMPT (price-drop alert / availability alert / PDF quote), the alert-offering flow (one alert per room, exact-price threshold suggestion, `get_my_profile` for notification defaults, availability alert for sold-out rooms), and the PDF quote flow (per-destination add-on toggles before calling generate_quote_pdf). Applies across all four Room Genie products (WDW, DLR, Aulani, DCL). Also the right skill when the user mentions "Room Genie", "my alerts", "watch this price", "availability alert", "price drop alert", or "PDF quote".
 ---
 
 # Room Genie — Core workflows
@@ -21,10 +21,38 @@ Room Genie monitors Disney hotel rooms and cruise staterooms for availability an
 | `create_alert` | Create a new availability or price-drop alert (hotel OR cruise). ONE per room — don't try to combine. |
 | `toggle_alert` | Pause or resume an alert |
 | `delete_alert` | Permanently delete an alert |
+| `build_quote` | Open an INTERACTIVE FORM (MCP App) that collects everything `explore_rates` needs for a hotel quote — resort, dates, party, rooms, package add-ons. Hotels only. Prefer this over asking the questionnaire in chat; see "Start hotel quotes with the interactive form" below. |
 | `explore_rates` | Query live HOTEL rates: `mode: "availability" | "room-only" | "package"` (WDW / DLR / Aulani only). For cruises use `cruise_list_categories`. |
 | `show_price_matrix` | Render the full ticket + dining pricing grids from the cached last `explore_rates` package response. PRESENTATIONAL ONLY — no new scrape, no arguments needed. Call AFTER emitting the quote text to the user. |
 | `generate_quote_pdf` | Render a branded multi-page client-facing PDF (cover, per-room sections with photos, optional add-ons comparison, terms page). Requires the Explorer subscription. Call ONLY after asking the user the mandatory pre-call questions enumerated in the tool description (which rooms, optional quoteName/clientName/notes, per-destination add-on display toggles). **Auto-saves to /quotes** — the user can pull it back later via `list_quote_pdfs` even after the 7-day signed URL expires. |
 | `list_quote_pdfs` | List the user's saved quote PDFs with **freshly-signed download URLs** (re-signed on each call, so URLs in the result are always good for 7 days from the call). Use when the user says "show me my quotes", "send me that PDF I made yesterday", "list my saved PDFs". Optional filters: `query` (substring on quoteName/clientName), `productType` ('hotel' \| 'cruise'), `limit`. |
+
+## Every hotel quote starts with the interactive form (`build_quote`)
+
+`build_quote` is the **default and only entry point** for a hotel quote (WDW / DLR / Aulani). It is the FIRST tool you call for any hotel pricing request — before `list_resorts`, before `list_room_types`, before `explore_rates`.
+
+- **Pass everything they already said as prefill.** `resortName` takes a fuzzy name ("Poly", "Grand Flo"); also pass `checkIn`/`checkOut`/`adults`/`children`/`childAges`/`mode`/`ticketDays`/`ticketType`/`diningPlan`/`memoryMaker`/`travelProtection` when known. The form preselects all of it and asks only what's left.
+- **Rooms: only pass `roomTypes` for rooms the user actually named.** The form deliberately preselects NO rooms otherwise — every room is a separate 25–30s scrape, so the choice is the user's to make. There is no "select every room" prefill; if they want all of them, the form has a one-click **Select all**.
+- **Comparing resorts? Pass them all.** Use `resortNames: ["Pop Century", "Art of Animation"]` (or `resortIds`) when the user wants to compare. The form applies the same dates, party and add-ons to every resort, and the add-on questions narrow to what all of them sell — a WDW+DLR comparison only offers 2–5 park days and the two shared ticket types, and drops dining and Memory Maker entirely. On submit you'll be told to make **one `explore_rates` call per resort**; present the results side by side.
+- **Call it even when the request already looks complete.** "Pop Century, all rooms, Aug 15–17, 2 adults + 2 kids (5, 9), 4-day one park per day, no dining, no MM, no TP" still goes through the form — it opens fully prefilled and the user just presses **Get prices**. That press is what confirms the values and satisfies `userConfirmedChoices`. Never skip the form because nothing seems to be missing.
+- **⛔ Never collect these answers yourself — in any form.** Not as chat text, and **not through your client's own question/choice/picker UI** (an `AskUserQuestion`-style multiple-choice prompt). Resort, dates, party, rooms, room-only-vs-package, park days, ticket type, dining plan, Memory Maker and Travel Protection all belong to the form. Reaching for a built-in picker instead of `build_quote` is the most common way to get this wrong.
+- **Then stop.** Tell the user to review the form. Do NOT call `list_room_types` or `explore_rates` in that same turn — the form loads the room list itself and asks only the questions that apply to that resort's product.
+- **On submit** you receive a recap of the user's selections ending with the exact line `(Submitted from the Room Genie quote builder — all selections confirmed.)`.
+
+  **That line means the message CAME FROM THE FORM.** It is *not* the user bypassing the form, *not* them "answering in chat", and *not* a reason to fall back to the questionnaire. Every value in it is user-confirmed.
+
+  The exact machine parameters (resortId, roomTypes, enum values) travel separately as a block beginning `[Room Genie quote builder — user submitted confirmed selections]` — delivered either as the visible message or as app context alongside the recap. The recap the user sees deliberately shows **names, not ids**.
+
+  - **If you have the parameter block:** use its values verbatim. Do NOT call `list_resorts` / `list_room_types` — you already have the ids.
+  - **If you don't** (a client that can't deliver app context): resolve the resort and room *names* from the recap yourself via `list_resorts` / `list_room_types`, **silently**. Don't ask the user to repeat anything, don't re-run the questionnaire, don't re-present the room list. They already chose; you're only translating names to ids.
+
+  Either way, call `explore_rates` with those values plus `userConfirmedChoices: true` (once per resort if several are listed), never echo raw ids back to the user, and then continue with the normal presentation flow (all room quotes rendered in chat first, then `show_price_matrix` once).
+
+**The only times you skip the form:** (a) the user says no form appeared / their client can't render it, (b) they explicitly ask you to just ask in chat or skip the form, or (c) they're re-pricing something already quoted this conversation and only one value changed. In cases (a) and (b), fall back to the standard questionnaire in the golden rules below and the product planner skills — and do not call `build_quote` again in that conversation.
+
+Golden rule 1 ("list before you price") is **satisfied by the form** — the handoff message already carries the user's room choice, so don't re-run `list_room_types`. Alerts (`create_alert`) keep their own confirmation flow; the form does not cover them.
+
+`build_quote` is **hotels only**. The DCL flow (`cruise_search_sailings` → `cruise_list_categories`) is unchanged. It also does not create alerts — the alert questionnaire in golden rule 2 still applies as written.
 
 ## Golden rules
 

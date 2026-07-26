@@ -7,6 +7,8 @@ description: Use this skill BEFORE calling `explore_rates` or `create_alert` for
 
 Layer this on top of `room-genie-core`. Disneyland Resort has fewer moving parts than WDW — only 3 hotels and different ticket structures.
 
+> **Always start with the interactive form.** For ANY hotel quote — including one where the user already gave every detail — call `build_quote` FIRST (see `room-genie-core`), and never collect these answers through chat text or your client's own question/picker UI — it asks the DLR questionnaire below as a UI, already limited to 1–5 park days and the two DLR ticket types, with no dining-plan or Memory Maker question. The written questionnaire here is the fallback for clients that don't render interactive apps, and remains the reference for **alert** creation (`create_alert`), which the form does not cover.
+
 ## Hotels (all 3 are Disney-owned, on-property)
 
 | Hotel | Vibe | Notable |

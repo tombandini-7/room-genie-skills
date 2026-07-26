@@ -1,6 +1,6 @@
 ---
 name: setup-mcp
-description: Use this skill ONE TIME when the user first installs the Room Genie plugin OR whenever the user asks to "set up Room Genie", "connect Room Genie", "register the Room Genie MCP server", or complains about being repeatedly prompted to approve Room Genie tool calls. This skill (1) registers the hosted `room-genie` MCP server with Claude Code via `claude mcp add --transport streamable-http`, (2) writes an allowlist to project `.claude/settings.json` so read-only tools (list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, list_alerts, get_alert, get_my_profile, explore_rates) auto-approve without prompting, while keeping destructive mutations (create_alert, toggle_alert, delete_alert) on manual approval. Do NOT use for troubleshooting an already-set-up server — use for the initial registration + permissions setup only.
+description: Use this skill ONE TIME when the user first installs the Room Genie plugin OR whenever the user asks to "set up Room Genie", "connect Room Genie", "register the Room Genie MCP server", or complains about being repeatedly prompted to approve Room Genie tool calls. This skill (1) registers the hosted `room-genie` MCP server with Claude Code via `claude mcp add --transport streamable-http`, (2) writes an allowlist to project `.claude/settings.json` so read-only tools (list_resorts, list_room_types, list_cruise_sailings, list_stateroom_categories, list_alerts, get_alert, get_my_profile, build_quote, explore_rates) auto-approve without prompting, while keeping destructive mutations (create_alert, toggle_alert, delete_alert) on manual approval. Do NOT use for troubleshooting an already-set-up server — use for the initial registration + permissions setup only.
 ---
 
 # Room Genie — MCP setup
@@ -57,6 +57,7 @@ Target shape:
       "mcp__room-genie__list_alerts",
       "mcp__room-genie__get_alert",
       "mcp__room-genie__get_my_profile",
+      "mcp__room-genie__build_quote",
       "mcp__room-genie__explore_rates"
     ],
     "ask": [
@@ -78,7 +79,7 @@ Target shape:
 
 Confirm in one short message:
 
-> "Done. I registered the `room-genie` MCP server and allowlisted the 8 read-only Room Genie tools so they won't prompt. Destructive actions (create/toggle/delete alert) still ask for confirmation — say yes once per action. Try asking `list my Room Genie alerts` to test."
+> "Done. I registered the `room-genie` MCP server and allowlisted the 9 read-only Room Genie tools so they won't prompt. Destructive actions (create/toggle/delete alert) still ask for confirmation — say yes once per action. Try asking `list my Room Genie alerts` to test."
 
 ## Things NOT to do
 
@@ -101,6 +102,6 @@ Confirm in one short message:
 
 Before writing to settings.json, preview what you'll do:
 
-> "I'll add these 8 Room Genie tools to your project's `.claude/settings.json` allowlist so they run without prompting: `list_resorts`, `list_room_types`, `list_cruise_sailings`, `list_stateroom_categories`, `list_alerts`, `get_alert`, `get_my_profile`, `explore_rates`. The three destructive tools (`create_alert`, `toggle_alert`, `delete_alert`) will still ask for confirmation each time. OK to proceed?"
+> "I'll add these 9 Room Genie tools to your project's `.claude/settings.json` allowlist so they run without prompting: `list_resorts`, `list_room_types`, `list_cruise_sailings`, `list_stateroom_categories`, `list_alerts`, `get_alert`, `get_my_profile`, `build_quote`, `explore_rates`. The three destructive tools (`create_alert`, `toggle_alert`, `delete_alert`) will still ask for confirmation each time. OK to proceed?"
 
 After user confirms, write the file and report what changed.

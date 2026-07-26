@@ -7,6 +7,8 @@ description: Use this skill BEFORE calling `explore_rates` or `create_alert` for
 
 Layer this on top of `room-genie-core`. Aulani is Disney's Hawaii resort — simpler than WDW/DLR because it doesn't sell theme park tickets or dining plans as add-ons.
 
+> **Always start with the interactive form.** For ANY Aulani quote — including one where the user already gave every detail — call `build_quote` FIRST (see `room-genie-core`), and never collect these answers through chat text or your client's own question/picker UI. The form shows only "Check availability" / "Get pricing" plus the single Travel Protection yes/no — no tickets, dining, or Memory Maker question can appear — and it maps the answer to the mode the server requires (TP yes → `mode: "package"`, TP no → `mode: "room-only"`). The written questionnaire here is the fallback for clients that don't render interactive apps, and remains the reference for **alert** creation (`create_alert`), which the form does not cover.
+
 ## Room categories at Aulani
 
 - **Standard Hotel Rooms** — Island View, Partial Ocean View, Ocean View, Poolside
