@@ -7,6 +7,8 @@ description: Use this skill BEFORE calling `explore_rates` or `create_alert` for
 
 Layer this on top of `room-genie-core`. Use the MCP tools from that skill; this skill adds WDW-specific domain knowledge for picking a resort and quoting full packages.
 
+> **Always start with the interactive form.** For ANY hotel quote — including one where the user already gave every detail — call `build_quote` FIRST (see `room-genie-core`), and never collect these answers through chat text or your client's own question/picker UI — it asks the WDW questionnaire below as a UI, with the correct park-day range, ticket labels and year-appropriate dining plans already built in, and hands the confirmed answers back for `explore_rates`. The written questionnaire in this skill is the fallback for clients that don't render interactive apps, and remains the reference for **alert** creation (`create_alert`), which the form does not cover.
+
 ## Resort tiers (affects price and amenities)
 
 | Tier | Examples | Typical nightly rate | Who it's for |
