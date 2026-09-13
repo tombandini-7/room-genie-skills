@@ -14,6 +14,8 @@ Layer this on top of `room-genie-core`. DCL is structurally different from hotel
 | 1 | `cruise_search_sailings` | cheap (~20–60s) | Find sailings by month/ship. Returns sailing ID, ship, itinerary name, dates, nights, **ports of call**, lowest fare, available y/n. |
 | 2 | `cruise_list_categories` | full quote (~15–30s) | After the user picks ONE sailing AND you've asked the placeholder question, render the FULL pricing view: cruise title, itinerary + ports + sea days, payment schedule (deposit-due rule per tier, final-payment date), sectioned tables (Interior / Oceanview / Oceanview with Verandah / Concierge) with deck/location/total/deposit/gratuities/grand-total, gratuities footer, and price-drop alert guidance. When `placeholder: true`, the tables show discounted Total / Savings / placeholder Deposit. **This is the only DCL pricing tool — there is no separate "quote" step.** |
 
+- **Sold-out sailings appear in search results** with `**SOLD OUT**` in the Available column and no prices. Do not hide them. If the user asks about one, call `cruise_list_categories` for it as normal — every category comes back at 0 rooms — then offer an **availability alert** on the category they want (`create_alert`, kind "cruise", alertType "availability"). Never offer a price-drop alert or a PDF quote for a sold-out sailing.
+
 **Cruise pricing has moved fully to the two tools above.** `explore_rates` is hotel-only — do not pass `sailingId` to it. The previous `list_cruise_sailings`, `list_stateroom_categories`, and `cruise_get_quote` tools have been removed (their functionality is now folded into `cruise_list_categories`).
 
 ## Three HARD rules the server enforces
