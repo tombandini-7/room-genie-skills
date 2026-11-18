@@ -80,7 +80,7 @@ Golden rule 1 ("list before you price") is **satisfied by the form** — the han
    - `availability` — fires when any room becomes available for sold-out dates. No target price needed.
    - `price_drop` — fires when the total price falls below `currentPrice`. User must supply a target.
 
-   **When the user asks for an `availability` alert, run a live check first.** Before calling `create_alert` with `alertType: "availability"`, offer to run `explore_rates` in `mode: "availability"` for the same resort/rooms/dates/party. This is fast and free (no Explorer subscription required, no credits consumed), and it tells the user whether the room is already available right now — in which case they may not need an alert at all, or they may want to book immediately.
+   **When the user asks for an `availability` alert, run a live check first.** Before calling `create_alert` with `alertType: "availability"`, offer to run `explore_rates` in `mode: "availability"` for the same resort/rooms/dates/party. This is fast and free (no Explorer subscription required, no credits consumed) and shows availability only — it never returns prices for non-Explorer users. It tells the user whether the room is already available right now — in which case they may not need an alert at all, or they may want to book immediately.
 
    > "Before I set the availability alert, want me to run a quick live check? I can see right now whether any of those rooms are open for your dates — takes about 10 seconds."
 
@@ -365,7 +365,9 @@ If you are tempted to "refresh" because you think the data might be stale, or be
 ## Error handling
 
 - **401 / auth errors** from MCP → tell the user their Claude client needs to reconnect to Room Genie (the OAuth session may have expired). Direct them to `/mcp` in Claude Code or the equivalent in Claude Desktop.
-- **403 "Explorer subscription required"** → `mode: "room-only"` and `mode: "package"` require the $29 Explorer plan. Suggest they either use `mode: "availability"` (free across all tiers) or upgrade at https://app.roomgenie.travel/plans.
+- **403 "Explorer subscription required"** → `mode: "room-only"` and `mode: "package"` require the $29 Explorer plan. Suggest they either use `mode: "availability"` (availability only, no prices — needs an active alert plan or a single-alert credit) or upgrade at https://app.roomgenie.travel/plans.
+- **403 / "requires an Explorer subscription" from `cruise_search_sailings` or `cruise_list_categories`** → Disney Cruise Line search and pricing are Explorer-only. Tell the user to upgrade at https://app.roomgenie.travel/plans; do not retry.
+- **"Availability checks require an active alert plan or credit"** from `explore_rates` → the user has no plan or credits at all; point them to https://app.roomgenie.travel/plans.
 - **"No alert credits remaining"** on `create_alert` → direct them to https://app.roomgenie.travel/plans.
 
 ## Do NOT

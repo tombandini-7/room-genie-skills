@@ -32,7 +32,7 @@ If a user asks for "a package with tickets and dining" at Aulani, correct them: 
 
 ## Explore-rates modes at Aulani
 
-- `mode: "availability"` — "is this room type open these dates?" — lightweight, no subscription needed.
+- `mode: "availability"` — "is this room type open these dates?" — lightweight, availability only (no prices are returned), no Explorer subscription needed — requires an active alert plan or single-alert credit.
 - `mode: "room-only"` — full per-room pricing. Works on Aulani, uses the Aulani-specific backend automatically. Requires Explorer subscription.
 - `mode: "package"` — NOT applicable in the WDW sense. Treat any package-style request as `room-only` plus optional travel protection.
 
